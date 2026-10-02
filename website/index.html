@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aşgabat Taxi — şäherde çalt we amatly taksi</title>
+<meta name="description" content="Aşgabat Taxi — Aşgabat şäherinde taksi çagyrmak üçin programma. 2 minutda sürüji, öňünden belli baha, nagt ýa-da kart bilen töleg. Sürüjiler üçin goşmaça girdeji.">
+<meta property="og:title" content="Aşgabat Taxi">
+<meta property="og:description" content="Şäherde çalt we amatly taksi. Programmany ýükläň.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚕</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav">
+  <a href="#" class="brand">🚕 <span>Aşgabat<b>Taxi</b></span></a>
+  <nav class="links">
+    <a href="#features" data-i18n="nav.features">Artykmaçlyklar</a>
+    <a href="#tariffs" data-i18n="nav.tariffs">Tarifler</a>
+    <a href="#how" data-i18n="nav.how">Nähili işleýär</a>
+    <a href="#drivers" data-i18n="nav.drivers">Sürüjilere</a>
+    <a href="#faq" data-i18n="nav.faq">Soraglar</a>
+  </nav>
+  <div class="nav-right">
+    <div class="lang"><button data-lang="tk" class="active">TK</button><button data-lang="ru">RU</button></div>
+    <a href="#download" class="btn primary small" data-i18n="nav.download">Ýüklemek</a>
+    <button class="burger" id="burger" aria-label="menu">☰</button>
+  </div>
+</header>
+
+<main>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-text">
+    <span class="eyebrow" data-i18n="hero.eyebrow">Aşgabat şäheri üçin</span>
+    <h1 data-i18n="hero.title">Taksi 2 minutda.<br>Baha — öňünden belli.</h1>
+    <p data-i18n="hero.sub">Programmada ýeriňizi görkeziň, tarifi saýlaň we sürüjiniň gelşini kartada yzarlaň. Nagt ýa-da kart bilen töläň.</p>
+    <div class="cta">
+      <a href="#download" class="btn primary" data-i18n="hero.client">📱 Müşderi programmasy</a>
+      <a href="#drivers" class="btn ghost" data-i18n="hero.driver">🚗 Sürüji bolmak</a>
+    </div>
+    <div class="stats">
+      <div><b>2 min</b><span data-i18n="hero.s1">ortaça garaşma</span></div>
+      <div><b>5</b><span data-i18n="hero.s2">tarif klasy</span></div>
+      <div><b>24/7</b><span data-i18n="hero.s3">hyzmat</span></div>
+    </div>
+  </div>
+  <div class="hero-phone">
+    <div class="phone">
+      <div class="screen">
+        <div class="map-bg">
+          <div class="road r1"></div><div class="road r2"></div><div class="road r3"></div>
+          <div class="pin a">📍</div><div class="car c1">🚕</div><div class="car c2">🚕</div><div class="car c3">🚕</div>
+        </div>
+        <div class="sheet">
+          <div class="field"><span class="dot g"></span><span data-i18n="phone.from">Magtymguly şaýoly, 24</span></div>
+          <div class="field"><span class="dot r"></span><span data-i18n="phone.to">Berkararlyk söwda merkezi</span></div>
+          <div class="tarifs">
+            <div class="t active"><small data-i18n="t.economy">Ekonom</small><b>21 TMT</b></div>
+            <div class="t"><small data-i18n="t.comfort">Komfort</small><b>28.5 TMT</b></div>
+            <div class="t"><small data-i18n="t.business">Biznes</small><b>45.5 TMT</b></div>
+          </div>
+          <div class="order-btn" data-i18n="phone.order">Taksi çagyrmak</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="section">
+  <h2 data-i18n="f.title">Näme üçin Aşgabat Taxi?</h2>
+  <div class="grid4">
+    <div class="feat"><div class="ic">⚡</div><h3 data-i18n="f1.t">Çalt gelýär</h3><p data-i18n="f1.p">Sargyt iň ýakyn sürüjilere awtomatik iberilýär — garaşma wagty iň az.</p></div>
+    <div class="feat"><div class="ic">💰</div><h3 data-i18n="f2.t">Belli baha</h3><p data-i18n="f2.p">Bahany sargytdan öň görýärsiňiz we ol ýolda üýtgemeýär. Gizlin töleg ýok.</p></div>
+    <div class="feat"><div class="ic">🗺️</div><h3 data-i18n="f3.t">Kartada yzarlama</h3><p data-i18n="f3.p">Sürüjiniň nirede gelýänini, awtoulagyň markasyny we nomerini görýärsiňiz.</p></div>
+    <div class="feat"><div class="ic">🛡️</div><h3 data-i18n="f4.t">Howpsuzlyk</h3><p data-i18n="f4.p">Ähli sürüjiler resminamalary barlanyp tassyklanýar. Her gatnawdan soň baha beriň.</p></div>
+    <div class="feat"><div class="ic">📦</div><h3 data-i18n="f5.t">Eltip bermek</h3><p data-i18n="f5.p">Posylka, resminama ýa-da nahar — şäheriň islendik ýerine kurýer tapyň.</p></div>
+    <div class="feat"><div class="ic">💳</div><h3 data-i18n="f6.t">Amatly töleg</h3><p data-i18n="f6.p">Nagt ýa-da bank karty bilen. Promokod bilen arzanladyş alyň.</p></div>
+    <div class="feat"><div class="ic">🕐</div><h3 data-i18n="f7.t">Öňünden sargyt</h3><p data-i18n="f7.p">Aeroporta ýa-da işe gitjek wagtyňyzy belläň — taksi öz wagtynda geler.</p></div>
+    <div class="feat"><div class="ic">🌙</div><h3 data-i18n="f8.t">Gije-gündiz</h3><p data-i18n="f8.p">24 sagat işleýäris. Gije tarifi öňünden görkezilýär.</p></div>
+  </div>
+</section>
+
+<!-- TARIFFS -->
+<section id="tariffs" class="section alt">
+  <h2 data-i18n="tr.title">Tarifler</h2>
+  <p class="center muted" data-i18n="tr.sub">Bahalar programmada her sargyt üçin aralyga görä awtomatik hasaplanýar.</p>
+  <div class="calc">
+    <label><span data-i18n="tr.km">Aralyk (km)</span><input id="calcKm" type="range" min="1" max="30" value="8" step="0.5"></label>
+    <b><span id="calcKmV">8</span> km · <span id="calcMinV">15</span> <span data-i18n="tr.min">min</span></b>
+  </div>
+  <div id="tariffCards" class="grid5"></div>
+</section>
+
+<!-- HOW -->
+<section id="how" class="section">
+  <h2 data-i18n="h.title">Nähili işleýär</h2>
+  <div class="steps">
+    <div class="step"><span>1</span><h3 data-i18n="h1.t">Ýeriňizi görkeziň</h3><p data-i18n="h1.p">Programma siziň nirede durandygyňyzy özi kesgitleýär. Barmaly ýeriňizi ýazyň ýa-da kartadan saýlaň.</p></div>
+    <div class="step"><span>2</span><h3 data-i18n="h2.t">Tarifi saýlaň</h3><p data-i18n="h2.p">Ekonom, Komfort, Biznes, Miniwen ýa-da Eltip bermek — bahasy derrew görkezilýär.</p></div>
+    <div class="step"><span>3</span><h3 data-i18n="h3.t">Sürüjä garaşyň</h3><p data-i18n="h3.p">Sürüjiniň ady, awtoulagy, nomeri we gelýän ýoly kartada görünýär. Jaň edip bilersiňiz.</p></div>
+    <div class="step"><span>4</span><h3 data-i18n="h4.t">Töläň we baha beriň</h3><p data-i18n="h4.p">Gatnaw gutaransoň nagt ýa-da kart bilen töläň we sürüjä ýyldyz goýuň.</p></div>
+  </div>
+</section>
+
+<!-- DRIVERS -->
+<section id="drivers" class="section dark">
+  <div class="split">
+    <div>
+      <span class="eyebrow" data-i18n="d.eyebrow">Sürüjiler üçin</span>
+      <h2 data-i18n="d.title">Öz awtoulagyňyzda gazanyň</h2>
+      <ul class="checks">
+        <li data-i18n="d1">Komissiýa bary-ýogy 10% — galany siziňki</li>
+        <li data-i18n="d2">Sargytlar awtomatik gelýär, dispetçere jaň etmek gerek däl</li>
+        <li data-i18n="d3">Islän wagtyňyz onlaýn/oflaýn boluň — erkin grafik</li>
+        <li data-i18n="d4">Günlük, hepdelik, aýlyk girdeji hasabaty programmada</li>
+        <li data-i18n="d5">Kart tölegleri balansyňyza awtomatik geçýär</li>
+      </ul>
+      <h3 data-i18n="d.req">Gerekli resminamalar</h3>
+      <p class="muted" data-i18n="d.req.p">Sürüjilik şahadatnamasy (B), awtoulagyň tehpasporty, ýaşy 21+, awtoulag 2010-njy ýyldan täze. Hasaba alnandan soň 1 iş gününde tassyklaýarys.</p>
+      <a href="#download" class="btn primary" data-i18n="d.cta">🚗 Sürüji programmasyny ýüklemek</a>
+    </div>
+    <div class="earn card">
+      <h3 data-i18n="e.title">Girdeji kalkulýatory</h3>
+      <label><span data-i18n="e.rides">Günde gatnaw sany</span><input id="earnRides" type="range" min="5" max="40" value="15"><b id="earnRidesV">15</b></label>
+      <label><span data-i18n="e.days">Aýda iş güni</span><input id="earnDays" type="range" min="10" max="30" value="24"><b id="earnDaysV">24</b></label>
+      <div class="earn-result"><span data-i18n="e.result">Takmynan aýlyk girdeji</span><b id="earnTotal">—</b></div>
+      <p class="muted small" data-i18n="e.note">Ortaça gatnaw 20 TMT, komissiýa 10% göz öňünde tutuldy. Ýangyç çykdajysy girmeýär.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section id="download" class="section">
+  <h2 data-i18n="dl.title">Programmany ýükläň</h2>
+  <p class="center muted" data-i18n="dl.sub">Android üçin APK faýly. Gurmak üçin "Näbelli çeşmelerden gurmaga rugsat" opsiýasyny açyň.</p>
+  <div class="dl-grid">
+    <div class="dl card">
+      <div class="ic big">📱</div>
+      <h3 data-i18n="dl.client">Müşderi programmasy</h3>
+      <p data-i18n="dl.client.p">Taksi çagyrmak, kurýer sargyt etmek, taryh we promokodlar.</p>
+      <a class="btn primary" href="downloads/ashgabat-taxi-client.apk" download>⬇ Android APK</a>
+      <small class="muted">Android 7.0+ · ~8 MB</small>
+    </div>
+    <div class="dl card">
+      <div class="ic big">🚗</div>
+      <h3 data-i18n="dl.driver">Sürüji programmasy</h3>
+      <p data-i18n="dl.driver.p">Sargytlary kabul etmek, nawigasiýa, girdeji hasabaty we balans.</p>
+      <a class="btn primary" href="downloads/ashgabat-taxi-driver.apk" download>⬇ Android APK</a>
+      <small class="muted">Android 7.0+ · ~8 MB</small>
+    </div>
+  </div>
+  <div class="qr-note muted center" data-i18n="dl.note">iOS wersiýasy taýýarlanýar. Soraglar üçin: <a href="tel:+99312000000">+993 12 00-00-00</a></div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="section alt">
+  <h2 data-i18n="faq.title">Köp berilýän soraglar</h2>
+  <div class="faq">
+    <details><summary data-i18n="q1">Baha ýolda üýtgäp bilermi?</summary><p data-i18n="a1">Ýok. Sargyt wagtynda görkezilen baha gutarnykly. Diňe siz sürüjini 3 minutdan köp garaşdyrsaňyz, garaşma tölegi goşulýar (tarifde görkezilen).</p></details>
+    <details><summary data-i18n="q2">Sargydy ýatyryp bolýarmy?</summary><p data-i18n="a2">Hawa, sürüji gelýänçä programmadan mugt ýatyryp bolýar.</p></details>
+    <details><summary data-i18n="q3">Gije tarifi näçe?</summary><p data-i18n="a3">22:00–06:00 aralygynda baha 20% ýokary. Bu sargytdan öň programmada görkezilýär.</p></details>
+    <details><summary data-i18n="q4">Kart bilen nädip tölemeli?</summary><p data-i18n="a4">Sargyt edeniňizde "Kart" töleg usulyny saýlaň. Töleg gatnaw gutaransoň awtomatik alynýar.</p></details>
+    <details><summary data-i18n="q5">Zady awtoulagda galdyrsam näme etmeli?</summary><p data-i18n="a5">Programmada "Taryh" bölüminden şol gatnawy açyň we "Goldaw" düwmesine basyň — operatorlar sürüji bilen baglanyşdyrar.</p></details>
+    <details><summary data-i18n="q6">Sürüji bolmak üçin näme gerek?</summary><p data-i18n="a6">Sürüji programmasyny ýükläň, telefon belgiňiz bilen giriň, awtoulag maglumatlaryny dolduryň. Moderasiýadan soň sargytlary kabul edip başlarsyňyz.</p></details>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="split">
+    <div>
+      <div class="brand">🚕 <span>Aşgabat<b>Taxi</b></span></div>
+      <p class="muted" data-i18n="ft.about">Aşgabat şäherinde taksi we eltip bermek hyzmaty.</p>
+    </div>
+    <div>
+      <h4 data-i18n="ft.contact">Habarlaşmak</h4>
+      <p>☎ <a href="tel:+99312000000">+993 12 00-00-00</a><br>✉ <a href="mailto:info@ashgabat-taxi.tm">info@ashgabat-taxi.tm</a><br>📍 <span data-i18n="ft.addr">Aşgabat, Türkmenistan</span></p>
+    </div>
+    <div>
+      <h4 data-i18n="ft.links">Baglanyşyklar</h4>
+      <p><a href="#download" data-i18n="nav.download">Ýüklemek</a><br><a href="#drivers" data-i18n="nav.drivers">Sürüjilere</a><br><a href="privacy.html" data-i18n="ft.privacy">Gizlinlik syýasaty</a><br><a href="/admin/">Admin</a></p>
+    </div>
+  </div>
+  <p class="copy muted">© <span id="year"></span> Aşgabat Taxi</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

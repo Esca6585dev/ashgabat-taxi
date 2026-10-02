@@ -1,0 +1,21 @@
+# Go
+backend/*.db
+backend/*.db-*
+backend/.env
+backend/server
+backend/server.exe
+
+# Android
+android/**/build/
+android/.gradle/
+android/local.properties
+android/**/*.iml
+android/.idea/
+android/**/release/*.apk
+*.keystore
+*.jks
+
+# misc
+.DS_Store
+Thumbs.db
+node_modules/

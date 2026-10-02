@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taxi
+      POSTGRES_PASSWORD: taxi_secret
+      POSTGRES_DB: taxi
+      TZ: Asia/Ashgabat
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taxi"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: production
+      PORT: 8080
+      JWT_SECRET: ${JWT_SECRET:-change-me-please}
+      DB_DRIVER: postgres
+      DB_DSN: host=db user=taxi password=taxi_secret dbname=taxi port=5432 sslmode=disable TimeZone=Asia/Ashgabat
+      ADMIN_PHONE: ${ADMIN_PHONE:-+99360000000}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin12345}
+      SMS_PROVIDER: ${SMS_PROVIDER:-log}
+      SMS_HTTP_URL: ${SMS_HTTP_URL:-}
+      SMS_HTTP_TOKEN: ${SMS_HTTP_TOKEN:-}
+      OTP_FIXED_CODE: ${OTP_FIXED_CODE:-}
+      OSRM_URL: ${OSRM_URL:-}
+      COMMISSION_RATE: ${COMMISSION_RATE:-0.10}
+      SUPPORT_PHONE: ${SUPPORT_PHONE:-+99312000000}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  # Optional: self-hosted routing for real road distances (needs an OSM extract of Turkmenistan).
+  # 1) download https://download.geofabrik.de/asia/turkmenistan-latest.osm.pbf into ./osrm/
+  # 2) run the three preprocessing commands from docs/ADIMLER.md, then enable this service and set OSRM_URL=http://osrm:5000
+  # osrm:
+  #   image: osrm/osrm-backend
+  #   command: osrm-routed --algorithm mld /data/turkmenistan-latest.osrm
+  #   volumes:
+  #     - ./osrm:/data
+
+volumes:
+  pgdata:

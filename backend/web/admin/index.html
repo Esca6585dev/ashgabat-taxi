@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aşgabat Taxi — Admin</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<section id="login" class="login hidden">
+  <form id="loginForm" class="card login-card">
+    <div class="logo">🚕 <b>Aşgabat Taxi</b><span>Admin panel</span></div>
+    <label>Telefon<input id="loginPhone" placeholder="+993 6X XXXXXX" value="+99360000000" required></label>
+    <label>Parol<input id="loginPass" type="password" placeholder="••••••••" required></label>
+    <p id="loginErr" class="err"></p>
+    <button class="btn primary">Girmek</button>
+  </form>
+</section>
+
+<!-- APP -->
+<div id="app" class="app hidden">
+  <aside class="side">
+    <div class="logo">🚕 <b>Aşgabat Taxi</b></div>
+    <nav>
+      <a href="#dashboard" data-page="dashboard">📊 Dashboard</a>
+      <a href="#map" data-page="map">🗺️ Janly karta</a>
+      <a href="#orders" data-page="orders">🧾 Sargytlar</a>
+      <a href="#drivers" data-page="drivers">🚗 Sürüjiler <span id="pendingBadge" class="badge hidden"></span></a>
+      <a href="#clients" data-page="clients">👤 Müşderiler</a>
+      <a href="#tariffs" data-page="tariffs">💰 Tarifler</a>
+      <a href="#promos" data-page="promos">🎁 Promokodlar</a>
+      <a href="#tickets" data-page="tickets">💬 Ýüztutmalar <span id="ticketBadge" class="badge hidden"></span></a>
+      <a href="#settings" data-page="settings">⚙️ Sazlamalar</a>
+    </nav>
+    <div class="side-foot">
+      <span id="wsState" class="dot off" title="WebSocket"></span>
+      <button id="logout" class="btn ghost small">Çykmak</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button id="menuBtn" class="btn ghost small">☰</button>
+      <h1 id="pageTitle">Dashboard</h1>
+      <div id="clock" class="muted"></div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section data-page="dashboard" class="page">
+      <div id="statCards" class="cards"></div>
+      <div class="grid2">
+        <div class="card"><h3>Soňky 14 gün — sargytlar</h3><div id="chartOrders" class="chart"></div></div>
+        <div class="card"><h3>Soňky 14 gün — girdeji (TMT)</h3><div id="chartRevenue" class="chart"></div></div>
+      </div>
+      <div class="card"><h3>Ýagdaý boýunça</h3><div id="byStatus" class="chips"></div></div>
+    </section>
+
+    <!-- MAP -->
+    <section data-page="map" class="page">
+      <div class="grid-map">
+        <div id="liveMap" class="map"></div>
+        <div class="card list-card">
+          <h3>Onlaýn sürüjiler <span id="onlineCount" class="pill"></span></h3>
+          <div id="onlineList" class="list"></div>
+          <h3>Işjeň sargytlar</h3>
+          <div id="activeList" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section data-page="orders" class="page">
+      <div class="toolbar">
+        <select id="orderStatus">
+          <option value="">Ählisi</option><option value="active">Işjeň</option><option value="searching">Gözlenýär</option>
+          <option value="accepted">Kabul edildi</option><option value="in_progress">Ýolda</option>
+          <option value="completed">Tamamlandy</option><option value="cancelled">Ýatyryldy</option>
+        </select>
+        <input id="orderQ" placeholder="ID ýa-da salgy boýunça gözleg">
+        <button id="orderRefresh" class="btn">Täzele</button>
+      </div>
+      <div class="card table-wrap"><table id="ordersTable"><thead><tr>
+        <th>ID</th><th>Wagt</th><th>Müşderi</th><th>Sürüji</th><th>Tarif</th><th>Nireden → Nirä</th><th>km</th><th>Baha</th><th>Ýagdaý</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+      <div id="ordersPager" class="pager"></div>
+    </section>
+
+    <!-- DRIVERS -->
+    <section data-page="drivers" class="page">
+      <div class="toolbar">
+        <select id="driverStatus">
+          <option value="">Ählisi</option><option value="pending">Garaşýar</option><option value="approved">Tassyklanan</option>
+          <option value="rejected">Ret edilen</option><option value="blocked">Bloklanan</option>
+        </select>
+        <input id="driverQ" placeholder="Telefon, at ýa-da nomer">
+        <button id="driverRefresh" class="btn">Täzele</button>
+      </div>
+      <div class="card table-wrap"><table id="driversTable"><thead><tr>
+        <th>ID</th><th>Sürüji</th><th>Telefon</th><th>Awtoulag</th><th>Tarifler</th><th>Reýting</th><th>Gatnaw</th><th>Balans</th><th>Komissiýa</th><th>Ýagdaý</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+      <div id="driversPager" class="pager"></div>
+    </section>
+
+    <!-- CLIENTS -->
+    <section data-page="clients" class="page">
+      <div class="toolbar">
+        <input id="clientQ" placeholder="Telefon ýa-da at">
+        <button id="clientRefresh" class="btn">Täzele</button>
+      </div>
+      <div class="card table-wrap"><table id="clientsTable"><thead><tr>
+        <th>ID</th><th>At</th><th>Telefon</th><th>Rol</th><th>Reýting</th><th>Hasaba alnan</th><th>Ýagdaý</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+      <div id="clientsPager" class="pager"></div>
+    </section>
+
+    <!-- TARIFFS -->
+    <section data-page="tariffs" class="page">
+      <div class="toolbar"><button id="tariffAdd" class="btn primary">+ Täze tarif</button></div>
+      <div id="tariffList" class="cards"></div>
+    </section>
+
+    <!-- PROMOS -->
+    <section data-page="promos" class="page">
+      <div class="toolbar"><button id="promoAdd" class="btn primary">+ Täze promokod</button></div>
+      <div class="card table-wrap"><table id="promosTable"><thead><tr>
+        <th>Kod</th><th>%</th><th>TMT</th><th>Ulanyş</th><th>Möhlet</th><th>Işjeň</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- TICKETS -->
+    <section data-page="tickets" class="page">
+      <div class="toolbar">
+        <select id="ticketStatus"><option value="open">Açyk</option><option value="resolved">Çözülen</option><option value="">Ählisi</option></select>
+        <button id="ticketRefresh" class="btn">Täzele</button>
+      </div>
+      <div id="ticketList" class="cards"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section data-page="settings" class="page">
+      <div class="card narrow">
+        <h3>Admin paroly üýtgetmek</h3>
+        <form id="passForm">
+          <label>Köne parol<input id="oldPass" type="password" required></label>
+          <label>Täze parol<input id="newPass" type="password" minlength="6" required></label>
+          <button class="btn primary">Ýatda sakla</button>
+        </form>
+      </div>
+      <div class="card narrow">
+        <h3>API</h3>
+        <p class="muted">Adres: <code id="apiBaseShow"></code></p>
+        <p class="muted">Serwer sazlamalary <code>backend/.env</code> faýlynda (komissiýa, SMS, OSRM, dispetçer radiusy).</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="modal hidden"><div class="modal-box card"><div id="modalBody"></div></div></div>
+<div id="toasts" class="toasts"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
