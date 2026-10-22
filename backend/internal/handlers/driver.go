@@ -51,11 +51,17 @@ func (h *Handler) DriverRegister(c *fiber.Ctx) error {
 	if d.Status == models.DriverBlocked {
 		return utils.Err(c, 403, "sürüji hasabyňyz bloklanan")
 	}
+	if d.CurrentOrderID != nil {
+		return utils.Err(c, 400, "işjeň sargyt wagtynda profil üýtgedip bolmaýar")
+	}
+	plate, license := strings.ToUpper(strings.TrimSpace(req.CarPlate)), strings.TrimSpace(req.LicenseNumber)
+	// a new car or licence must be checked again by an admin
+	recheck := d.Status == models.DriverApproved && (plate != d.CarPlate || license != d.LicenseNumber)
 	d.CarBrand, d.CarModel, d.CarColor = strings.TrimSpace(req.CarBrand), strings.TrimSpace(req.CarModel), strings.TrimSpace(req.CarColor)
-	d.CarPlate = strings.ToUpper(strings.TrimSpace(req.CarPlate))
-	d.CarYear, d.LicenseNumber, d.TariffCodes = req.CarYear, strings.TrimSpace(req.LicenseNumber), codes
-	if d.Status == models.DriverRejected {
-		d.Status, d.RejectReason = models.DriverPending, ""
+	d.CarPlate = plate
+	d.CarYear, d.LicenseNumber, d.TariffCodes = req.CarYear, license, codes
+	if d.Status == models.DriverRejected || recheck {
+		d.Status, d.RejectReason, d.IsOnline = models.DriverPending, "", false
 	}
 	if err := h.DB.Save(d).Error; err != nil {
 		return utils.Err(c, 500, "ýatda saklap bolmady")

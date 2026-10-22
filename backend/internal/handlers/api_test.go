@@ -190,3 +190,24 @@ func TestPhoneNormalizationAndRejects(t *testing.T) {
 		t.Fatalf("unauthenticated access allowed: %v", r)
 	}
 }
+
+func TestDriverCarChangeNeedsNewApproval(t *testing.T) {
+	e := startServer(t)
+	driver := e.login("+99362000077", "driver")
+	admin, _ := data(e.call("POST", "/api/v1/auth/admin/login", "", map[string]any{"phone": "+99360000000", "password": "admin12345"}))["token"].(string)
+	car := map[string]any{"car_brand": "Toyota", "car_model": "Camry", "car_plate": "ag 7777", "license_number": "L77", "tariff_codes": "economy"}
+	id := data(e.call("POST", "/api/v1/driver/register", driver, car))["id"]
+	e.call("PUT", fmt.Sprintf("/api/v1/admin/drivers/%v/status", id), admin, map[string]any{"status": "approved"})
+
+	// colour / tariffs only: stays approved
+	car["car_color"], car["tariff_codes"] = "Ak", "economy,comfort"
+	if st := data(e.call("POST", "/api/v1/driver/register", driver, car))["status"]; st != "approved" {
+		t.Fatalf("cosmetic change reset approval: %v", st)
+	}
+	// new plate: back to moderation and offline
+	car["car_plate"] = "AG 8888"
+	d := data(e.call("POST", "/api/v1/driver/register", driver, car))
+	if d["status"] != "pending" || d["is_online"] != false {
+		t.Fatalf("plate change kept approval: %v", d)
+	}
+}

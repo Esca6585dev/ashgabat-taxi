@@ -121,25 +121,28 @@
     else driverMarkers[id] = L.marker([d.lat, d.lng], { icon: carIcon(d.heading) }).addTo(map).bindPopup(`Sürüji #${id}`);
   }
   async function loadMap() {
-    if (!map) {
+    if (typeof L === 'undefined') {
+      // CDN unreachable: keep the driver / order lists working without the map
+      $('#liveMap').innerHTML = '<p class="muted" style="padding:16px">Karta ýüklenmedi (Leaflet kitaphanasy açylmady). Internedi barlaň.</p>';
+    } else if (!map) {
       map = L.map('liveMap').setView(CITY, 12);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
     }
-    setTimeout(() => map.invalidateSize(), 50);
+    if (map) setTimeout(() => map.invalidateSize(), 50);
     const drivers = await api('/admin/drivers/online');
     Object.values(driverMarkers).forEach(m => map.removeLayer(m)); driverMarkers = {};
     drivers.forEach(d => { placeDriver({ driver_id: d.id, lat: d.lat, lng: d.lng, heading: d.heading }); driverMarkers[d.id] && driverMarkers[d.id].bindPopup(`<b>${esc(d.user?.name)}</b><br>${esc(d.user?.phone)}<br>${esc(d.car_brand)} ${esc(d.car_model)} ${esc(d.car_plate)}`); });
     $('#onlineCount').textContent = drivers.length;
     $('#onlineList').innerHTML = drivers.map(d => `<div class="item" data-ll="${d.lat},${d.lng}">🚕 <b>${esc(d.user?.name || '—')}</b> · ${esc(d.car_plate)}<br><span class="muted">${esc(d.car_brand)} ${esc(d.car_model)} · ${d.current_order_id ? 'sargytda #' + d.current_order_id : 'boş'}</span></div>`).join('') || '<span class="muted">Onlaýn sürüji ýok</span>';
-    $$('#onlineList .item').forEach(i => i.onclick = () => map.setView(i.dataset.ll.split(',').map(Number), 15));
+    $$('#onlineList .item').forEach(i => i.onclick = () => map && map.setView(i.dataset.ll.split(',').map(Number), 15));
     refreshActive();
   }
   async function refreshActive() {
     const { items } = await api('/admin/orders?status=active&limit=50');
     Object.values(orderMarkers).forEach(m => map.removeLayer(m)); orderMarkers = {};
-    items.forEach(o => { orderMarkers[o.id] = L.circleMarker([o.pickup_lat, o.pickup_lng], { radius: 7, color: o.status === 'searching' ? '#f59e0b' : '#3b82f6', fillOpacity: .8 }).addTo(map).bindPopup(`Sargyt #${o.id} — ${STATUS[o.status]}<br>${esc(o.pickup_address)} → ${esc(o.dropoff_address)}`); });
+    if (map) items.forEach(o => { orderMarkers[o.id] = L.circleMarker([o.pickup_lat, o.pickup_lng], { radius: 7, color: o.status === 'searching' ? '#f59e0b' : '#3b82f6', fillOpacity: .8 }).addTo(map).bindPopup(`Sargyt #${o.id} — ${STATUS[o.status]}<br>${esc(o.pickup_address)} → ${esc(o.dropoff_address)}`); });
     $('#activeList').innerHTML = items.map(o => `<div class="item" data-ll="${o.pickup_lat},${o.pickup_lng}">#${o.id} ${stat(o.status)}<br><span class="muted">${esc(o.pickup_address || '')} → ${esc(o.dropoff_address || '')}</span><br>${fmtMoney(o.final_price)} · ${esc(o.client?.phone || '')}</div>`).join('') || '<span class="muted">Işjeň sargyt ýok</span>';
-    $$('#activeList .item').forEach(i => i.onclick = () => map.setView(i.dataset.ll.split(',').map(Number), 15));
+    $$('#activeList .item').forEach(i => i.onclick = () => map && map.setView(i.dataset.ll.split(',').map(Number), 15));
   }
 
   // ---------- orders ----------
@@ -154,7 +157,7 @@
       <td>${esc(o.tariff?.name || '')}${o.order_type === 'delivery' ? ' 📦' : ''}</td>
       <td>${esc(o.pickup_address || '')}<br>→ ${esc(o.dropoff_address || '')}</td>
       <td>${(o.distance_km || 0).toFixed(1)}</td>
-      <td>${fmtMoney(o.final_price)}${o.discount ? `<br><span class="muted">-${o.discount}</span>` : ''}<br><span class="muted">${o.payment_method}</span></td>
+      <td>${fmtMoney(o.final_price)}${o.discount ? `<br><span class="muted">-${o.discount}</span>` : ''}<br><span class="muted">${o.payment_method === 'card' ? 'Kart' : 'Nagt'}</span></td>
       <td>${stat(o.status)}${o.cancel_reason ? `<br><span class="muted">${esc(o.cancel_reason)}</span>` : ''}${o.client_rating ? `<br>★ ${o.client_rating}` : ''}</td>
       <td class="btns">${o.status === 'searching' ? `<button class="btn small" data-assign="${o.id}">Bellemek</button>` : ''}${['searching', 'accepted', 'arrived', 'in_progress'].includes(o.status) ? `<button class="btn small bad" data-cancel="${o.id}">Ýatyr</button>` : ''}</td>
     </tr>`).join('') || '<tr><td colspan="10" class="muted">Sargyt ýok</td></tr>';

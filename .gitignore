@@ -19,3 +19,12 @@ android/**/release/*.apk
 .DS_Store
 Thumbs.db
 node_modules/
+
+# Flutter (apps/*)
+apps/**/build/
+apps/**/.dart_tool/
+apps/**/.flutter-plugins
+apps/**/.flutter-plugins-dependencies
+apps/**/ios/Pods/
+apps/**/ios/.symlinks/
+apps/**/pubspec_overrides.yaml
