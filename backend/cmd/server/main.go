@@ -60,6 +60,7 @@ func main() {
 		app.Use(logger.New())
 	}
 	app.Use("/api/v1/auth/send-otp", limiter.New(limiter.Config{Max: 20, Expiration: time.Minute}))
+	app.Use("/api/v1/auth/login", limiter.New(limiter.Config{Max: 20, Expiration: time.Minute}))
 
 	routes.Register(app, h)
 

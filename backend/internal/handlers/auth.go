@@ -92,6 +92,7 @@ func (h *Handler) VerifyOTP(c *fiber.Ctx) error {
 	if err != nil {
 		return utils.Err(c, 500, "token döredip bolmady")
 	}
+	withPasswordFlag(&u)
 	if u.Role == models.RoleDriver {
 		if d, err := h.driverOf(u.ID); err == nil {
 			d.User = nil
@@ -107,6 +108,7 @@ func (h *Handler) Me(c *fiber.Ctx) error {
 	if err != nil {
 		return utils.Err(c, 401, err.Error())
 	}
+	withPasswordFlag(u)
 	if u.Role == models.RoleDriver {
 		if d, err := h.driverOf(u.ID); err == nil {
 			d.User = nil

@@ -38,6 +38,7 @@ class User {
   final bool isBlocked;
   final double rating;
   final int ratingCount;
+  final bool hasPassword;
   final DriverProfile? driver;
 
   const User({
@@ -49,6 +50,7 @@ class User {
     this.isBlocked = false,
     this.rating = 5,
     this.ratingCount = 0,
+    this.hasPassword = false,
     this.driver,
   });
 
@@ -61,6 +63,7 @@ class User {
         isBlocked: _b(j['is_blocked']),
         rating: j['rating'] == null ? 5 : _d(j['rating']),
         ratingCount: _i(j['rating_count']),
+        hasPassword: _b(j['has_password']),
         driver: _m(j['driver']) == null ? null : DriverProfile.fromJson(_m(j['driver'])!),
       );
 

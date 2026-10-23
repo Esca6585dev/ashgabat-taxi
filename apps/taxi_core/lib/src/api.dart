@@ -119,6 +119,16 @@ class ApiClient {
     return (token: d['token'].toString(), user: User.fromJson(_map(d['user'])), isNew: d['is_new'] == true);
   }
 
+  /// Driver app alternative to the SMS code: phone + password.
+  Future<({String token, User user, bool isNew})> passwordLogin(String phone, String password) async {
+    final d = _map(await post('/auth/login', {'phone': phone, 'password': password}));
+    return (token: d['token'].toString(), user: User.fromJson(_map(d['user'])), isNew: false);
+  }
+
+  /// Sets the first password (old may be empty) or changes it (old required).
+  Future<void> setPassword(String newPassword, {String oldPassword = ''}) =>
+      post('/auth/password', {'old_password': oldPassword, 'new_password': newPassword});
+
   Future<User> me() async => User.fromJson(_map(await get('/auth/me')));
   Future<User> updateProfile({String? name, String? lang, String? fcmToken}) async => User.fromJson(_map(await put('/auth/profile', {
         'name': ?name,

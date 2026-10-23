@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ashgabat-taxi/backend/internal/config"
@@ -60,6 +61,12 @@ func (s *HTTPSender) Send(phone, text string) error {
 
 // NewSMSSender picks the provider from config.
 func NewSMSSender(cfg *config.Config) SMSSender {
+	if cfg.SMSProvider == "smpp" {
+		if cfg.SMPPUser == "" || strings.HasPrefix(cfg.SMPPAddr, ":") {
+			log.Fatal("SMS_PROVIDER=smpp: SMPP_IP, SMPP_PORT, SMPP_USERNAME we SMPP_PASSWORD gerek")
+		}
+		return NewSMPPSender(cfg)
+	}
 	if cfg.SMSProvider == "http" && cfg.SMSHTTPURL != "" {
 		return &HTTPSender{URL: cfg.SMSHTTPURL, Token: cfg.SMSHTTPToken}
 	}

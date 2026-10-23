@@ -19,6 +19,7 @@ type User struct {
 	Name         string    `gorm:"size:100" json:"name"`
 	Role         Role      `gorm:"size:16;index" json:"role"`
 	PasswordHash string    `json:"-"`
+	HasPassword  bool      `gorm:"-" json:"has_password"` // filled by handlers, never stored
 	Lang         string    `gorm:"size:5;default:tk" json:"lang"`
 	IsBlocked    bool      `json:"is_blocked"`
 	Rating       float64   `gorm:"default:5" json:"rating"`

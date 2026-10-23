@@ -27,6 +27,7 @@ class DriverApp extends StatelessWidget {
           title: 'Aşgabat Taxi Sürüji',
           subtitle: 'Sürüji hökmünde işläň we gazanyň',
           icon: Icons.drive_eta,
+          allowPassword: true,
         ),
         home: () => DriverRoot(session: session, ctrl: DriverController(session)),
       ),

@@ -211,3 +211,70 @@ func TestDriverCarChangeNeedsNewApproval(t *testing.T) {
 		t.Fatalf("plate change kept approval: %v", d)
 	}
 }
+
+func TestDriverPasswordLogin(t *testing.T) {
+	e := startServer(t)
+	admin, _ := data(e.call("POST", "/api/v1/auth/admin/login", "", map[string]any{"phone": "+99360000000", "password": "admin12345"}))["token"].(string)
+	login := func(phone, pass string) map[string]any {
+		return e.call("POST", "/api/v1/auth/login", "", map[string]any{"phone": phone, "password": pass})
+	}
+
+	// admin creates a driver account; the driver logs in without SMS
+	r := e.call("POST", "/api/v1/admin/drivers/account", admin, map[string]any{"phone": "65 33 44 55", "name": "Parol Sürüji", "password": "gizlin12"})
+	if data(r)["role"] != "driver" || data(r)["has_password"] != true {
+		t.Fatalf("create driver account: %v", r)
+	}
+	r = login("+99365334455", "gizlin12")
+	tok, _ := data(r)["token"].(string)
+	if tok == "" {
+		t.Fatalf("password login failed: %v", r)
+	}
+	if me := data(e.call("GET", "/api/v1/auth/me", tok, nil)); me["role"] != "driver" || me["has_password"] != true {
+		t.Fatalf("me: %v", me)
+	}
+
+	// driver changes own password: old one required
+	if r := e.call("POST", "/api/v1/auth/password", tok, map[string]any{"old_password": "bad", "new_password": "taze1234"}); r["success"] != false {
+		t.Fatalf("changed without old password: %v", r)
+	}
+	if r := e.call("POST", "/api/v1/auth/password", tok, map[string]any{"old_password": "gizlin12", "new_password": "taze1234"}); r["success"] != true {
+		t.Fatalf("change password: %v", r)
+	}
+	if login("+99365334455", "gizlin12")["success"] != false || login("+99365334455", "taze1234")["success"] != true {
+		t.Fatal("old password still works or new one does not")
+	}
+
+	// a driver who joined with SMS sets a first password without an old one
+	sms := e.login("+99362334455", "driver")
+	if r := e.call("POST", "/api/v1/auth/password", sms, map[string]any{"new_password": "birinji1"}); r["success"] != true {
+		t.Fatalf("first password: %v", r)
+	}
+	if login("+99362334455", "birinji1")["success"] != true {
+		t.Fatal("first password login failed")
+	}
+
+	// clients cannot use passwords
+	cl := e.login("+99365334466", "client")
+	if r := e.call("POST", "/api/v1/auth/password", cl, map[string]any{"new_password": "musderi1"}); r["success"] != false {
+		t.Fatalf("client set a password: %v", r)
+	}
+	if login("+99365334466", "musderi1")["success"] != false {
+		t.Fatal("client logged in with password")
+	}
+
+	// lockout after repeated wrong passwords, admin reset clears it
+	for i := 0; i < 5; i++ {
+		login("+99362334455", "yalnys")
+	}
+	if r := login("+99362334455", "birinji1"); r["success"] != false {
+		t.Fatalf("not locked after 5 wrong passwords: %v", r)
+	}
+	users := data(e.call("GET", "/api/v1/admin/users?q=62334455", admin, nil))["items"].([]any)
+	uid := users[0].(map[string]any)["id"]
+	if r := e.call("PUT", fmt.Sprintf("/api/v1/admin/users/%v/password", uid), admin, map[string]any{"password": "admin-berdi"}); r["success"] != true {
+		t.Fatalf("admin reset: %v", r)
+	}
+	if login("+99362334455", "admin-berdi")["success"] != true {
+		t.Fatal("login after admin reset failed")
+	}
+}

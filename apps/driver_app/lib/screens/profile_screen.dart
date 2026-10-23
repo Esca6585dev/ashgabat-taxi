@@ -12,7 +12,7 @@ class DriverProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: ctrl,
+      listenable: Listenable.merge([ctrl, session]),
       builder: (context, _) {
         final u = session.user;
         final d = ctrl.driver;
@@ -68,6 +68,12 @@ class DriverProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
+                  onPressed: () => _changePassword(context),
+                  icon: const Icon(Icons.key_outlined),
+                  label: Text(u?.hasPassword == true ? 'Paroly üýtget' : 'Parol bellemek (SMS-siz girmek üçin)'),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(foregroundColor: TaxiColors.red),
                   onPressed: ctrl.busy
                       ? null
@@ -86,5 +92,45 @@ class DriverProfileScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _changePassword(BuildContext context) async {
+    final has = session.user?.hasPassword == true;
+    final oldC = TextEditingController();
+    final newC = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(has ? 'Paroly üýtget' : 'Parol bellemek'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (!has)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Text('Indiki gezek telefon belgiňiz we şu parol bilen SMS kodsyz girip bilersiňiz.'),
+            ),
+          if (has) TextField(controller: oldC, obscureText: true, decoration: const InputDecoration(labelText: 'Häzirki parol')),
+          if (has) const SizedBox(height: 12),
+          TextField(controller: newC, obscureText: true, decoration: const InputDecoration(labelText: 'Täze parol (azyndan 6 simwol)')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Ýap')),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Ýatda sakla')),
+        ],
+      ),
+    );
+    final oldP = oldC.text, newP = newC.text;
+    oldC.dispose();
+    newC.dispose();
+    if (ok != true || !context.mounted) return;
+    if (newP.length < 6) {
+      showMsg(context, 'Parol azyndan 6 simwol bolmaly', error: true);
+      return;
+    }
+    final done = await guard(context, () async {
+      await session.api.setPassword(newP, oldPassword: oldP);
+      await session.refreshUser();
+      return true;
+    });
+    if (done == true && context.mounted) showMsg(context, 'Parol ýatda saklandy');
   }
 }

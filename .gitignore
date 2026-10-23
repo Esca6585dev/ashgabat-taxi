@@ -2,6 +2,7 @@
 backend/*.db
 backend/*.db-*
 backend/.env
+.env
 backend/server
 backend/server.exe
 

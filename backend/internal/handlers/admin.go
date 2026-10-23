@@ -76,6 +76,9 @@ func (h *Handler) AdminUsers(c *fiber.Ctx) error {
 	q.Count(&total)
 	var users []models.User
 	q.Order("id desc").Limit(limit).Offset(offset).Find(&users)
+	for i := range users {
+		withPasswordFlag(&users[i])
+	}
 	return utils.OK(c, fiber.Map{"items": users, "total": total})
 }
 
@@ -119,6 +122,11 @@ func (h *Handler) AdminDrivers(c *fiber.Ctx) error {
 	q.Count(&total)
 	var drivers []models.Driver
 	q.Order("drivers.id desc").Limit(limit).Offset(offset).Find(&drivers)
+	for i := range drivers {
+		if drivers[i].User != nil {
+			withPasswordFlag(drivers[i].User)
+		}
+	}
 	return utils.OK(c, fiber.Map{"items": drivers, "total": total})
 }
 

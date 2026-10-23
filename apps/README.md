@@ -62,7 +62,8 @@ geldim → ýola çyk → tamamla → baha → gazanç ýoluny barlaýar.
 
 ## Sürüji programmasy
 
-- Giriş, awtoulag we şahadatnama bilen hasaba durmak → admin tassyklaýança garaşmak
+- Giriş: SMS kod ýa-da telefon + parol (paroly admin berýär ýa-da sürüji profilde özi belleýär)
+- Awtoulag we şahadatnama bilen hasaba durmak → admin tassyklaýança garaşmak
 - Onlaýn / oflaýn, GPS ýerleşişi WebSocket arkaly (her 30 sekuntda hem täzelenýär)
 - Täze sargyt kartoçkasy: baha, aralyk, 30 sekunt sanaw, kabul et / ýok
 - Ädimler: Geldim → Ýola çyk → Tamamla; nawigasiýa (Google/Yandex kartalaryny açýar), müşderä jaň

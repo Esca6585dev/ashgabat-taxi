@@ -133,5 +133,15 @@ void main() {
     expect((await client.myTickets()).first.id, t.id);
 
     expect(await driver.setOnline(false), isFalse);
+
+    // driver sets a password, then logs in with phone + password instead of SMS
+    await driver.setPassword('sürüji-123');
+    expect((await driver.me()).hasPassword, isTrue);
+    final byPassword = ApiClient(baseUrl: base);
+    final pl = await byPassword.passwordLogin(driverPhone, 'sürüji-123');
+    expect(pl.user.id, (await driver.me()).id);
+    await expectLater(byPassword.passwordLogin(driverPhone, 'nädogry'), throwsA(isA<ApiException>()));
+    // clients stay on SMS only
+    await expectLater(client.setPassword('müşderi-1'), throwsA(isA<ApiException>()));
   }, skip: base == null ? 'set TAXI_API_URL to run against a live backend' : false, timeout: const Timeout(Duration(minutes: 2)));
 }

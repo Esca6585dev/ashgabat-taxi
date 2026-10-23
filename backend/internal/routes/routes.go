@@ -32,6 +32,8 @@ func Register(app *fiber.App, h *handlers.Handler) {
 	a.Post("/send-otp", h.SendOTP)
 	a.Post("/verify-otp", h.VerifyOTP)
 	a.Post("/admin/login", h.AdminLogin)
+	a.Post("/login", h.PasswordLogin) // drivers: phone + password
+	a.Post("/password", auth, h.SetPassword)
 	a.Get("/me", auth, h.Me)
 	a.Put("/profile", auth, h.UpdateProfile)
 
@@ -75,6 +77,8 @@ func Register(app *fiber.App, h *handlers.Handler) {
 	ad.Post("/password", h.ChangeAdminPassword)
 	ad.Get("/users", h.AdminUsers)
 	ad.Put("/users/:id/block", h.AdminBlockUser)
+	ad.Put("/users/:id/password", h.AdminSetPassword)
+	ad.Post("/drivers/account", h.AdminCreateDriver)
 	ad.Get("/drivers", h.AdminDrivers)
 	ad.Get("/drivers/online", h.AdminOnlineDrivers)
 	ad.Put("/drivers/:id/status", h.AdminDriverStatus)

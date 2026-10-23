@@ -21,9 +21,22 @@ type Config struct {
 	AdminPhone    string
 	AdminPassword string
 
-	SMSProvider  string // log | http
+	SMSProvider  string // log | http | smpp (default: smpp when SMPP_IP is set, else log)
 	SMSHTTPURL   string
 	SMSHTTPToken string
+
+	// SMPP 3.4 operator connection (SMS_PROVIDER=smpp)
+	SMPPAddr       string // SMPP_IP:SMPP_PORT
+	SMPPUser       string
+	SMPPPassword   string
+	SMPPFrom       string // sender: short number or alpha name
+	SMPPSystemType string
+	SMPPDstFormat  string // 993 | plus | local | 8 — how the SMSC wants the recipient number
+	SMPPSrcTON     int
+	SMPPSrcNPI     int
+	SMPPDstTON     int
+	SMPPDstNPI     int
+
 	OTPFixedCode string // non-empty => every OTP equals this (dev/test only)
 	OTPTTLMin    int
 
@@ -70,6 +83,19 @@ func envFloat(key string, def float64) float64 {
 // Load reads .env (if present) and the process environment.
 func Load() *Config {
 	_ = godotenv.Load()
+	smppIP := env("SMPP_IP", "")
+	smsProvider := env("SMS_PROVIDER", "")
+	if smsProvider == "" {
+		smsProvider = "log"
+		if smppIP != "" {
+			smsProvider = "smpp"
+		}
+	}
+	dstFormat := env("SMPP_DST_FORMAT", "993")
+	dstTON, dstNPI := 1, 1 // international / ISDN
+	if dstFormat == "local" || dstFormat == "8" {
+		dstTON = 0
+	}
 	return &Config{
 		Port:           env("PORT", "8080"),
 		Env:            env("APP_ENV", "development"),
@@ -82,9 +108,21 @@ func Load() *Config {
 		AdminPhone:    env("ADMIN_PHONE", "+99360000000"),
 		AdminPassword: env("ADMIN_PASSWORD", "admin12345"),
 
-		SMSProvider:  env("SMS_PROVIDER", "log"),
+		SMSProvider:  smsProvider,
 		SMSHTTPURL:   env("SMS_HTTP_URL", ""),
 		SMSHTTPToken: env("SMS_HTTP_TOKEN", ""),
+
+		SMPPAddr:       smppIP + ":" + env("SMPP_PORT", "2775"),
+		SMPPUser:       env("SMPP_USERNAME", ""),
+		SMPPPassword:   env("SMPP_PASSWORD", ""),
+		SMPPFrom:       env("SMPP_FROM", ""),
+		SMPPSystemType: env("SMPP_SYSTEM_TYPE", ""),
+		SMPPDstFormat:  dstFormat,
+		SMPPSrcTON:     envInt("SMPP_SRC_TON", 0),
+		SMPPSrcNPI:     envInt("SMPP_SRC_NPI", 0),
+		SMPPDstTON:     envInt("SMPP_DST_TON", dstTON),
+		SMPPDstNPI:     envInt("SMPP_DST_NPI", dstNPI),
+
 		OTPFixedCode: env("OTP_FIXED_CODE", ""),
 		OTPTTLMin:    envInt("OTP_TTL_MIN", 5),
 

@@ -190,6 +190,7 @@
         ${d.status !== 'blocked' ? `<button class="btn small" data-st="blocked" data-id="${d.id}">Blokla</button>` : ''}
         <button class="btn small" data-edit="${d.id}">Üýtget</button>
         <button class="btn small" data-bal="${d.id}">Balans</button>
+        <button class="btn small" data-pass="${d.user_id}" data-who="${esc(d.user?.name || d.user?.phone || '')}">${d.user?.has_password ? 'Parol 🔑' : 'Parol'}</button>
       </td></tr>`).join('') || '<tr><td colspan="11" class="muted">Sürüji ýok</td></tr>';
     pager($('#driversPager'), total, state.drivers.page, limit, loadDrivers);
     $$('[data-st]').forEach(b => b.onclick = async () => {
@@ -207,6 +208,7 @@
       $('#edNo').onclick = closeModal;
       $('#edOk').onclick = async () => { await api(`/admin/drivers/${d.id}/status`, { method: 'PUT', body: { commission_rate: +$('#edCom').value, tariff_codes: $('#edTar').value } }); closeModal(); toast('Ýatda saklandy', 'ok'); loadDrivers(); };
     });
+    bindPasswordButtons();
     $$('[data-bal]').forEach(b => b.onclick = () => {
       modal(`<h3>Balans üýtgetmek — sürüji #${b.dataset.bal}</h3>
         <label>Mukdar (TMT, + goşmak / − aýyrmak)<input id="balAmt" type="number" step="0.5" placeholder="50"></label>
@@ -216,6 +218,31 @@
       $('#balOk').onclick = async () => { try { await api(`/admin/drivers/${b.dataset.bal}/balance`, { method: 'POST', body: { amount: +$('#balAmt').value, note: $('#balNote').value } }); closeModal(); toast('Balans üýtgedildi', 'ok'); loadDrivers(); } catch (e) { toast(e.message, 'bad'); } };
     });
   }
+  // driver app password: set / reset for one driver, or create a new driver login
+  function bindPasswordButtons() {
+    $$('[data-pass]').forEach(b => b.onclick = () => {
+      modal(`<h3>Sürüji paroly — ${b.dataset.who}</h3>
+        <p class="muted">Sürüji programma telefon belgisi we şu parol bilen girer (SMS kodsyz).</p>
+        <label>Täze parol (azyndan 6 simwol)<input id="pwNew" type="text" minlength="6" autocomplete="new-password"></label>
+        <div class="btns"><button class="btn primary" id="pwOk">Ýatda sakla</button><button class="btn" id="pwNo">Ýap</button></div>`);
+      $('#pwNo').onclick = closeModal;
+      $('#pwOk').onclick = async () => {
+        try { await api(`/admin/users/${b.dataset.pass}/password`, { method: 'PUT', body: { password: $('#pwNew').value } }); closeModal(); toast('Parol bellendi', 'ok'); state.page === 'clients' ? loadClients() : loadDrivers(); } catch (e) { toast(e.message, 'bad'); }
+      };
+    });
+  }
+  $('#driverAccountAdd').onclick = () => {
+    modal(`<h3>Täze sürüji hasaby</h3>
+      <p class="muted">Sürüji programma şu telefon we parol bilen girip, awtoulag maglumatlaryny dolduryp tassyklamaga iberer.</p>
+      <label>Telefon<input id="naPhone" placeholder="+993 6X XXXXXX"></label>
+      <label>Ady<input id="naName"></label>
+      <label>Parol (azyndan 6 simwol)<input id="naPass" type="text" minlength="6" autocomplete="new-password"></label>
+      <div class="btns"><button class="btn primary" id="naOk">Döret</button><button class="btn" id="naNo">Ýap</button></div>`);
+    $('#naNo').onclick = closeModal;
+    $('#naOk').onclick = async () => {
+      try { const u = await api('/admin/drivers/account', { method: 'POST', body: { phone: $('#naPhone').value, name: $('#naName').value, password: $('#naPass').value } }); closeModal(); toast(`Hasap döredildi: ${u.phone}`, 'ok'); } catch (e) { toast(e.message, 'bad'); }
+    };
+  };
   $('#driverRefresh').onclick = () => loadDrivers(1); $('#driverStatus').onchange = () => loadDrivers(1); $('#driverQ').onkeydown = e => e.key === 'Enter' && loadDrivers(1);
 
   // ---------- clients ----------
@@ -226,7 +253,8 @@
     $('#clientsTable tbody').innerHTML = items.map(u => `<tr>
       <td>#${u.id}</td><td>${esc(u.name || '—')}</td><td>${esc(u.phone)}</td><td>${u.role}</td><td>★ ${(u.rating || 5).toFixed(1)} <span class="muted">(${u.rating_count})</span></td><td>${fmtDate(u.created_at)}</td>
       <td>${u.is_blocked ? stat('blocked') : '<span class="status s-approved">Işjeň</span>'}</td>
-      <td>${u.role !== 'admin' ? `<button class="btn small ${u.is_blocked ? 'ok' : 'bad'}" data-block="${u.id}" data-v="${!u.is_blocked}">${u.is_blocked ? 'Aç' : 'Blokla'}</button>` : ''}</td></tr>`).join('');
+      <td class="btns">${u.role !== 'admin' ? `<button class="btn small ${u.is_blocked ? 'ok' : 'bad'}" data-block="${u.id}" data-v="${!u.is_blocked}">${u.is_blocked ? 'Aç' : 'Blokla'}</button>` : ''}${u.role === 'driver' ? `<button class="btn small" data-pass="${u.id}" data-who="${esc(u.name || u.phone)}">${u.has_password ? 'Parol 🔑' : 'Parol'}</button>` : ''}</td></tr>`).join('');
+    bindPasswordButtons();
     pager($('#clientsPager'), total, state.clients.page, limit, loadClients);
     $$('[data-block]').forEach(b => b.onclick = async () => { await api(`/admin/users/${b.dataset.block}/block`, { method: 'PUT', body: { blocked: b.dataset.v === 'true' } }); loadClients(); });
   }

@@ -56,6 +56,15 @@ class Session extends ChangeNotifier {
 
   Future<bool> verify(String phone, String code, {String? name}) async {
     final r = await api.verifyOtp(phone, code, role: role, name: name);
+    return _loggedIn(r);
+  }
+
+  /// Phone + password login (driver app).
+  Future<void> loginWithPassword(String phone, String password) async {
+    await _loggedIn(await api.passwordLogin(phone, password));
+  }
+
+  Future<bool> _loggedIn(({String token, User user, bool isNew}) r) async {
     api.token = r.token;
     user = r.user;
     final prefs = await SharedPreferences.getInstance();

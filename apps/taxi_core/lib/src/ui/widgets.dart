@@ -119,13 +119,22 @@ class _RatingSheetState extends State<_RatingSheet> {
 }
 
 /// Phone -> SMS code -> (name for new users). Calls [Session.verify].
+/// With [allowPassword] (driver app) a second tab logs in with phone + password instead.
 class PhoneLoginScreen extends StatefulWidget {
   final Session session;
   final String title;
   final String subtitle;
   final IconData icon;
+  final bool allowPassword;
 
-  const PhoneLoginScreen({super.key, required this.session, required this.title, required this.subtitle, this.icon = Icons.local_taxi});
+  const PhoneLoginScreen({
+    super.key,
+    required this.session,
+    required this.title,
+    required this.subtitle,
+    this.icon = Icons.local_taxi,
+    this.allowPassword = false,
+  });
 
   @override
   State<PhoneLoginScreen> createState() => _PhoneLoginScreenState();
@@ -135,6 +144,9 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   final phone = TextEditingController();
   final code = TextEditingController();
   final name = TextEditingController();
+  final password = TextEditingController();
+  bool usePassword = false;
+  bool showPassword = false;
   bool codeSent = false;
   bool busy = false;
   String? devCode;
@@ -144,6 +156,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     phone.dispose();
     code.dispose();
     name.dispose();
+    password.dispose();
     super.dispose();
   }
 
@@ -176,9 +189,24 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     if (mounted) setState(() => busy = false);
   }
 
+  Future<void> _passwordLogin() async {
+    if (!validPhone(_phone)) {
+      showMsg(context, 'Telefon belgisini dogry giriziň: 6X XXXXXX', error: true);
+      return;
+    }
+    if (password.text.isEmpty) {
+      showMsg(context, 'Paroly giriziň', error: true);
+      return;
+    }
+    setState(() => busy = true);
+    await guard(context, () => widget.session.loginWithPassword(_phone, password.text));
+    if (mounted) setState(() => busy = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
+    final pwMode = widget.allowPassword && usePassword;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -200,16 +228,44 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                 const SizedBox(height: 6),
                 Text(widget.subtitle, style: t.bodyLarge?.copyWith(color: TaxiColors.grey), textAlign: TextAlign.center),
                 const SizedBox(height: 32),
+                if (widget.allowPassword) ...[
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(value: false, icon: Icon(Icons.sms_outlined), label: Text('SMS kod')),
+                      ButtonSegment(value: true, icon: Icon(Icons.key_outlined), label: Text('Parol')),
+                    ],
+                    selected: {usePassword},
+                    onSelectionChanged: busy ? null : (v) => setState(() => usePassword = v.first),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 TextField(
                   key: const Key('phone'),
                   controller: phone,
-                  enabled: !codeSent,
+                  enabled: pwMode || !codeSent,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9 +\-]')), LengthLimitingTextInputFormatter(16)],
                   decoration: const InputDecoration(prefixText: '+993 ', labelText: 'Telefon belgi', hintText: '6X XXXXXX'),
                   style: const TextStyle(fontSize: 18),
                 ),
-                if (codeSent) ...[
+                if (pwMode) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('password'),
+                    controller: password,
+                    obscureText: !showPassword,
+                    onSubmitted: (_) => busy ? null : _passwordLogin(),
+                    decoration: InputDecoration(
+                      labelText: 'Parol',
+                      helperText: 'Paroly operator berýär ýa-da profilde bellenýär',
+                      suffixIcon: IconButton(
+                        icon: Icon(showPassword ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () => setState(() => showPassword = !showPassword),
+                      ),
+                    ),
+                  ),
+                ],
+                if (!pwMode && codeSent) ...[
                   const SizedBox(height: 12),
                   TextField(
                     key: const Key('code'),
@@ -229,12 +285,13 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                 ],
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: busy ? null : (codeSent ? _verify : _send),
+                  key: const Key('loginBtn'),
+                  onPressed: busy ? null : (pwMode ? _passwordLogin : (codeSent ? _verify : _send)),
                   child: busy
                       ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5))
-                      : Text(codeSent ? 'Girmek' : 'SMS kod al'),
+                      : Text(pwMode || codeSent ? 'Girmek' : 'SMS kod al'),
                 ),
-                if (codeSent)
+                if (!pwMode && codeSent)
                   TextButton(
                     onPressed: busy ? null : () => setState(() => codeSent = false),
                     child: const Text('Belgini üýtgetmek / kody täzeden almak'),
