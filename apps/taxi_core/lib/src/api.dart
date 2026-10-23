@@ -1,14 +1,25 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 import 'models.dart';
 
-/// Base URL of the backend, e.g. `http://192.168.1.10:8080`.
-/// Set at build time: `flutter run --dart-define=API_URL=https://api.example.tm`.
-/// The Android emulator reaches the host machine at 10.0.2.2.
-const String kApiUrl = String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:8080');
+/// Base URL of the backend baked in at build time:
+/// `flutter build apk --dart-define=API_URL=https://api.example.tm`.
+/// Users can still change it in the app (login screen, gear icon); see [ServerSettings].
+const String kApiUrl = String.fromEnvironment('API_URL');
+
+/// Build-time URL, else the page origin on web (the backend serves the web apps itself),
+/// else the Android emulator's address of the host machine.
+String defaultApiUrl() {
+  if (kApiUrl.isNotEmpty) return kApiUrl;
+  if (kIsWeb) return Uri.base.origin;
+  return 'http://10.0.2.2:8080';
+}
+
+String _trimUrl(String u) => u.trim().replaceAll(RegExp(r'/+$'), '');
 
 class ApiException implements Exception {
   final int status;
@@ -28,7 +39,7 @@ class ApiException implements Exception {
 
 /// Thin JSON client for the `/api/v1` envelope `{success, data, error}`.
 class ApiClient {
-  final String baseUrl;
+  String _baseUrl;
   final http.Client _http;
   String? token;
 
@@ -36,8 +47,11 @@ class ApiClient {
   void Function()? onUnauthorized;
 
   ApiClient({String? baseUrl, http.Client? client, this.token})
-      : baseUrl = (baseUrl ?? kApiUrl).replaceAll(RegExp(r'/+$'), ''),
+      : _baseUrl = _trimUrl(baseUrl ?? defaultApiUrl()),
         _http = client ?? http.Client();
+
+  String get baseUrl => _baseUrl;
+  set baseUrl(String v) => _baseUrl = _trimUrl(v);
 
   Uri _uri(String path, [Map<String, dynamic>? query]) {
     final q = query?.map((k, v) => MapEntry(k, '$v'));

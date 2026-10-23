@@ -106,6 +106,15 @@ func Register(app *fiber.App, h *handlers.Handler) {
 		app.Static("/admin", h.Cfg.AdminDir)
 		app.Get("/admin/*", func(c *fiber.Ctx) error { return c.SendFile(filepath.Join(h.Cfg.AdminDir, "index.html")) })
 	}
+	// web versions of the apps (Flutter, built with --base-href /app/ and /driver/)
+	for prefix, dir := range map[string]string{"/app": h.Cfg.ClientWebDir, "/driver": h.Cfg.DriverWebDir} {
+		if st, err := os.Stat(dir); err == nil && st.IsDir() {
+			index := filepath.Join(dir, "index.html")
+			// assets resolve through <base href="/app/">, so /app and /app/ both work
+			app.Static(prefix, dir, fiber.Static{Index: "index.html"})
+			app.Get(prefix+"/*", func(c *fiber.Ctx) error { return c.SendFile(index) })
+		}
+	}
 	if st, err := os.Stat(h.Cfg.SiteDir); err == nil && st.IsDir() {
 		app.Static("/", h.Cfg.SiteDir)
 	}

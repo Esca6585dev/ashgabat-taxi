@@ -71,13 +71,49 @@ docker run -t -v "$PWD:/data" osrm/osrm-backend osrm-customize /data/turkmenista
 
 Soňra `docker-compose.yml` içindäki `osrm` hyzmatyny açyň we `OSRM_URL=http://osrm:5000` beriň.
 
-## 3. Programmalary gurnamak
+## 3. Programmalar: APK we web
+
+### Taýýar faýllary almak (GitHub Actions)
+
+`main` şahasyna `apps/` üýtgeşmesi push edilende GitHub özi gurnaýar:
+GitHub → **Actions → Build apps** we **Releases** sahypasynda:
+
+| Faýl | Näme |
+|---|---|
+| `ashgabat-taxi-musderi.apk` | Müşderi programmasy (Android) |
+| `ashgabat-taxi-suruji.apk` | Sürüji programmasy (Android) |
+| `web-musderi.zip`, `web-suruji.zip` | Web görnüşleri |
+
+Serweriň salgysyny APK-a goşmak üçin: GitHub → Settings → Secrets and variables → Actions → **Variables** → `API_URL`
+(meselem `https://api.taxi.tm`), soňra **Actions → Build apps → Run workflow**. Bellenmese hem bolýar:
+programmada giriş ekranyndaky ⚙ düwmesi bilen serweriň salgysy girizilýär.
+
+Google Play üçin öz gol açaryňyzy (keystore) **Secrets**-e goşuň: `ANDROID_KEYSTORE_BASE64`,
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Bolmasa APK synag açary bilen gollanýar —
+telefona göni gurnamak üçin ýeterlik.
+
+### Web görnüşi
+
+Serwer web programmalary özi açýar: `http://SERWER:8080/app/` (müşderi) we `http://SERWER:8080/driver/` (sürüji).
+Docker bilen: `web-musderi.zip` we `web-suruji.zip` faýllaryny `docker-compose.yml` ýanyndaky `web-apps/` bukjasyna açyň:
+
+```bash
+mkdir -p web-apps && cd web-apps
+unzip ../web-musderi.zip && unzip ../web-suruji.zip     # client_web/ we driver_web/ bukjalary
+docker compose restart api
+```
+
+Web we serwer bir salgyda bolany üçin, web programma serweriň salgysyny özi bilýär.
+
+### Özüňiz gurnamak
 
 ```bash
 cd apps/client_app
 flutter build apk --release --dart-define=API_URL=https://api.siziň-domen.tm
+flutter build web --release --base-href /app/
 cd ../driver_app
 flutter build apk --release --dart-define=API_URL=https://api.siziň-domen.tm
+flutter build web --release --base-href /driver/
 ```
 
 Jikme-jiklikler: [`apps/README.md`](../apps/README.md).

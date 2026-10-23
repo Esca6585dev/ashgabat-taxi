@@ -33,11 +33,15 @@ flutter build ipa --dart-define=API_URL=https://api.siziň-domen.tm             
 
 `driver_app` hem şeýle. Release üçin Android gol (keystore) sazlaň — `android/app/build.gradle.kts` faýlynda `signingConfig`.
 
+Taýýar APK we web faýllary GitHub Actions gurnaýar (`.github/workflows/build-apps.yml`) — `docs/ADIMLER.md`, 3-nji bölüm.
+
+Serweriň salgysyny programmanyň içinde hem üýtgedip bolýar: giriş ekranynda ⚙ düwmesi.
+
 Sazlamalar (`--dart-define`):
 
 | Ady | Bellik |
 |---|---|
-| `API_URL` | Serweriň salgysy. Bellenmedik bolsa `http://10.0.2.2:8080` |
+| `API_URL` | Serweriň salgysy. Bellenmedik bolsa: webde sahypanyň öz salgysy, Android-de `http://10.0.2.2:8080` |
 | `TILE_URL` | Karta plitkalary. Bellenmedik bolsa `https://tile.openstreetmap.org/{z}/{x}/{y}.png` |
 
 ## Barlaglar

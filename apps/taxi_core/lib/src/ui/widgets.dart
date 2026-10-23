@@ -118,6 +118,66 @@ class _RatingSheetState extends State<_RatingSheet> {
   }
 }
 
+/// Lets the user point the app at another backend (checks /health first).
+Future<void> showServerDialog(BuildContext context, Session session) async {
+  final ctrl = TextEditingController(text: await session.savedServer());
+  if (!context.mounted) return;
+  String? error;
+  bool checking = false;
+  await showDialog<void>(
+    context: context,
+    builder: (c) => StatefulBuilder(
+      builder: (c, setSt) => AlertDialog(
+        title: const Text('Serweriň salgysy'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Häzirki: ${session.api.baseUrl}', style: const TextStyle(color: TaxiColors.grey, fontSize: 13)),
+          const SizedBox(height: 12),
+          TextField(
+            controller: ctrl,
+            keyboardType: TextInputType.url,
+            autocorrect: false,
+            decoration: InputDecoration(hintText: 'https://api.taxi.tm', errorText: error, helperText: 'Boş goýsaňyz, esasy salgy ulanylýar'),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Ýap')),
+          TextButton(
+            onPressed: checking
+                ? null
+                : () async {
+                    final url = ctrl.text.trim();
+                    if (url.isNotEmpty) {
+                      final u = Uri.tryParse(url);
+                      if (u == null || !(u.scheme == 'http' || u.scheme == 'https') || u.host.isEmpty) {
+                        setSt(() => error = 'Salgy http:// ýa-da https:// bilen başlamaly');
+                        return;
+                      }
+                      setSt(() {
+                        checking = true;
+                        error = null;
+                      });
+                      try {
+                        await ApiClient(baseUrl: url).get('/health');
+                      } catch (e) {
+                        setSt(() {
+                          checking = false;
+                          error = 'Serwere birikip bolmady';
+                        });
+                        return;
+                      }
+                    }
+                    if (c.mounted) Navigator.pop(c);
+                    await session.changeServer(url);
+                  },
+            child: Text(checking ? 'Barlanýar...' : 'Ýatda sakla'),
+          ),
+        ],
+      ),
+    ),
+  );
+  ctrl.dispose();
+}
+
 /// Phone -> SMS code -> (name for new users). Calls [Session.verify].
 /// With [allowPassword] (driver app) a second tab logs in with phone + password instead.
 class PhoneLoginScreen extends StatefulWidget {
@@ -209,6 +269,17 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     final pwMode = widget.allowPassword && usePassword;
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        actions: [
+          IconButton(
+            key: const Key('serverBtn'),
+            tooltip: 'Serwer',
+            icon: const Icon(Icons.settings_outlined, color: TaxiColors.grey),
+            onPressed: () => showServerDialog(context, widget.session),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -339,6 +410,7 @@ class SessionGate extends StatelessWidget {
                     },
                     child: const Text('Täzeden synanyş'),
                   ),
+                  TextButton(onPressed: () => showServerDialog(context, session), child: const Text('Serweriň salgysyny üýtget')),
                 ]),
               ),
             ),

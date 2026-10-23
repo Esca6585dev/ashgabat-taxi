@@ -43,8 +43,13 @@ services:
       OSRM_URL: ${OSRM_URL:-}
       COMMISSION_RATE: ${COMMISSION_RATE:-0.10}
       SUPPORT_PHONE: ${SUPPORT_PHONE:-+99312000000}
+      CLIENT_WEB_DIR: /app/web-apps/client_web
+      DRIVER_WEB_DIR: /app/web-apps/driver_web
     ports:
       - "8080:8080"
+    # web versions of the apps (unzip the release web-*.zip files into ./web-apps)
+    volumes:
+      - ./web-apps:/app/web-apps:ro
     restart: unless-stopped
 
   # Optional: self-hosted routing for real road distances (needs an OSM extract of Turkmenistan).

@@ -57,6 +57,10 @@ type Config struct {
 
 	AdminDir string
 	SiteDir  string
+
+	// Flutter web builds served at /app/ (client) and /driver/ (driver); skipped when missing.
+	ClientWebDir string
+	DriverWebDir string
 }
 
 func env(key, def string) string {
@@ -143,6 +147,9 @@ func Load() *Config {
 
 		AdminDir: env("ADMIN_DIR", "./web/admin"),
 		SiteDir:  env("SITE_DIR", "../website"),
+
+		ClientWebDir: env("CLIENT_WEB_DIR", "../apps/client_app/build/web"),
+		DriverWebDir: env("DRIVER_WEB_DIR", "../apps/driver_app/build/web"),
 	}
 }
 

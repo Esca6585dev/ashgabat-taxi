@@ -23,15 +23,40 @@ class Session extends ChangeNotifier {
   }
 
   String get _tokenKey => 'token_$role';
+  static const _serverKey = 'server_url';
+
+  /// Server address chosen in the app (overrides the build-time default), empty = default.
+  Future<String> savedServer() async => (await SharedPreferences.getInstance()).getString(_serverKey) ?? '';
+
+  /// Switches to another backend: forgets the login (tokens are per server) and reloads.
+  Future<void> changeServer(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    final u = url.trim();
+    if (u.isEmpty) {
+      await prefs.remove(_serverKey);
+    } else {
+      await prefs.setString(_serverKey, u);
+    }
+    realtime.disconnect();
+    await prefs.remove(_tokenKey);
+    api.token = null;
+    user = null;
+    api.baseUrl = u.isEmpty ? defaultApiUrl() : u;
+    ready = false;
+    notifyListeners();
+    await init();
+  }
   bool get loggedIn => user != null;
 
   /// Restores a saved token and loads the profile. Safe to call once at startup.
   Future<void> init() async {
     startupError = null;
+    final prefs = await SharedPreferences.getInstance();
+    final server = prefs.getString(_serverKey) ?? '';
+    if (server.isNotEmpty) api.baseUrl = server;
     try {
       config = await api.config();
     } catch (_) {}
-    final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_tokenKey);
     if (saved != null && saved.isNotEmpty) {
       api.token = saved;
