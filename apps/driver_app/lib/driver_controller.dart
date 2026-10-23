@@ -114,7 +114,13 @@ class DriverController extends ChangeNotifier {
   }
 
   void _startTracking() {
-    _gps ??= LocationService.stream(distanceFilter: 15).listen((p) {
+    // background: keeps sending the position while the driver uses another app (navigation, calls)
+    _gps ??= LocationService.stream(
+      distanceFilter: 15,
+      background: true,
+      title: 'Aşgabat Taxi Sürüji',
+      text: 'Siz onlaýn — sargytlar gelýär',
+    ).listen((p) {
       pos = LatLngPoint(p.latitude, p.longitude);
       if (p.heading >= 0) heading = p.heading;
       _sendPos();

@@ -47,3 +47,15 @@ String prettyPhone(String p) {
   if (!validPhone(n)) return p;
   return '+993 ${n.substring(4, 6)} ${n.substring(6, 8)}-${n.substring(8, 10)}-${n.substring(10)}';
 }
+
+/// "Şu gün 18:30", "Ertir 09:15" or "24.10 18:30".
+String whenText(DateTime t) {
+  final now = DateTime.now();
+  final day = DateTime(t.year, t.month, t.day);
+  final today = DateTime(now.year, now.month, now.day);
+  final hm = '${two(t.hour)}:${two(t.minute)}';
+  final diff = day.difference(today).inDays;
+  if (diff == 0) return 'Şu gün $hm';
+  if (diff == 1) return 'Ertir $hm';
+  return '${two(t.day)}.${two(t.month)} $hm';
+}

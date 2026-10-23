@@ -49,6 +49,25 @@ type DriverCandidate struct {
 	EtaMin     float64       `json:"eta_min"`
 }
 
+// ScheduledLead: a ride booked for later is offered to drivers this long before its time.
+const ScheduledLead = 15 * time.Minute
+
+// DispatchStart is when the search for a driver begins: creation, or ScheduledLead before a booked time.
+// The search radius and the no-driver timeout count from here.
+func DispatchStart(o *models.Order) time.Time {
+	if o.ScheduledAt != nil {
+		if s := o.ScheduledAt.Add(-ScheduledLead); s.After(o.CreatedAt) {
+			return s
+		}
+	}
+	return o.CreatedAt
+}
+
+// DispatchDue reports whether drivers should already see the order.
+func DispatchDue(o *models.Order, now time.Time) bool {
+	return !DispatchStart(o).After(now)
+}
+
 // NewDispatcher wires the dispatcher.
 func NewDispatcher(db *gorm.DB, hub *ws.Hub, cfg *config.Config) *Dispatcher {
 	return &Dispatcher{db: db, hub: hub, cfg: cfg, offers: make(map[uint]*offerState)}
@@ -152,7 +171,7 @@ func (d *Dispatcher) OfferOrder(o *models.Order) int {
 	if o.Tariff != nil {
 		code = o.Tariff.Code
 	}
-	radius := d.radiusFor(time.Since(o.CreatedAt))
+	radius := d.radiusFor(time.Since(DispatchStart(o)))
 	cands := d.NearbyDrivers(o.PickupLat, o.PickupLng, radius, code)
 
 	d.mu.Lock()
@@ -197,10 +216,10 @@ func (d *Dispatcher) tick() {
 	timeout := time.Duration(d.cfg.DispatchTimeoutSec) * time.Second
 	for i := range orders {
 		o := &orders[i]
-		if o.ScheduledAt != nil && o.ScheduledAt.After(time.Now().Add(15*time.Minute)) {
-			continue // scheduled ride: start dispatching 15 min before
+		if !DispatchDue(o, time.Now()) {
+			continue // scheduled ride: start dispatching ScheduledLead before
 		}
-		if time.Since(o.CreatedAt) > timeout {
+		if time.Since(DispatchStart(o)) > timeout {
 			d.expire(o)
 			continue
 		}

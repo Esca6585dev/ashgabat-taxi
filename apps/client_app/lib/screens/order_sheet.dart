@@ -35,6 +35,7 @@ class _OrderSheetState extends State<OrderSheet> {
   PromoResult? promo;
   String comment = '';
   String recipientPhone = '';
+  DateTime? scheduledAt; // null = now
   bool busy = false;
 
   ApiClient get api => widget.session.api;
@@ -162,6 +163,37 @@ class _OrderSheetState extends State<OrderSheet> {
     c2.dispose();
   }
 
+  /// Book for later: today..7 days ahead, at least 20 minutes from now.
+  Future<void> _pickTime() async {
+    final now = DateTime.now();
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(leading: const Icon(Icons.bolt), title: const Text('Häzir'), onTap: () => Navigator.pop(c, 'now')),
+          ListTile(leading: const Icon(Icons.schedule), title: const Text('Wagtyny saýla'), onTap: () => Navigator.pop(c, 'pick')),
+        ]),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    if (choice == 'now') {
+      setState(() => scheduledAt = null);
+      return;
+    }
+    final base = scheduledAt ?? now.add(const Duration(minutes: 30));
+    final date = await showDatePicker(context: context, initialDate: base, firstDate: now, lastDate: now.add(const Duration(days: 7)));
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(base));
+    if (time == null || !mounted) return;
+    final at = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    if (at.isBefore(now.add(const Duration(minutes: 20)))) {
+      showMsg(context, 'Iň az 20 minutdan soňky wagty saýlaň ýa-da «Häzir» sargyt ediň', error: true);
+      return;
+    }
+    setState(() => scheduledAt = at);
+  }
+
   Future<void> _order() async {
     final opt = _opt;
     if (opt == null) return;
@@ -179,6 +211,7 @@ class _OrderSheetState extends State<OrderSheet> {
         promoCode: promo?.code,
         comment: comment,
         recipientPhone: recipientPhone,
+        scheduledAt: scheduledAt,
       );
       widget.onOrdered(o);
     } on ApiException catch (e) {
@@ -224,7 +257,14 @@ class _OrderSheetState extends State<OrderSheet> {
               style: t.bodyMedium?.copyWith(color: TaxiColors.grey),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 10),
+            Center(
+              child: TextButton.icon(
+                key: const Key('timeBtn'),
+                onPressed: _pickTime,
+                icon: Icon(scheduledAt == null ? Icons.bolt : Icons.schedule, size: 18),
+                label: Text(scheduledAt == null ? 'Häzir · wagtyny üýtget' : 'Bellenen wagt: ${whenText(scheduledAt!)}'),
+              ),
+            ),
             SizedBox(
               height: 112,
               child: ListView.separated(
@@ -237,6 +277,10 @@ class _OrderSheetState extends State<OrderSheet> {
             const SizedBox(height: 8),
             Row(children: [
               _chip(payment == 'cash' ? Icons.payments_outlined : Icons.credit_card, paymentText(payment), () {
+                if (!widget.session.config.rideCard) {
+                  showMsg(context, 'Häzirlikçe diňe nagt töleg');
+                  return;
+                }
                 setState(() => payment = payment == 'cash' ? 'card' : 'cash');
               }),
               const SizedBox(width: 8),
@@ -254,7 +298,7 @@ class _OrderSheetState extends State<OrderSheet> {
                       ? 'Tarif ýok'
                       : _tooClose
                           ? 'Barmaly ýer gaty ýakyn'
-                          : 'Sargyt et · ${money(_opt!.price - _discount(_opt!.price), cur)}'),
+                          : '${scheduledAt == null ? 'Sargyt et' : 'Bellemek'} · ${money(_opt!.price - _discount(_opt!.price), cur)}'),
             ),
           ],
         ]),

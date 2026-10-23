@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'models.dart';
@@ -42,9 +43,39 @@ class LocationService {
   }
 
   /// Position updates every [distanceFilter] metres (driver tracking).
-  static Stream<Position> stream({int distanceFilter = 10}) => Geolocator.getPositionStream(
-        locationSettings: LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: distanceFilter),
-      );
+  ///
+  /// With [background] the updates keep coming while the app is not on screen:
+  /// Android runs a foreground service with a persistent notification, iOS keeps
+  /// location updates alive (needs the "location" background mode in Info.plist).
+  static Stream<Position> stream({int distanceFilter = 10, bool background = false, String title = '', String text = ''}) {
+    LocationSettings settings = LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: distanceFilter);
+    if (background && !kIsWeb) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        settings = AndroidSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: distanceFilter,
+          intervalDuration: const Duration(seconds: 5),
+          foregroundNotificationConfig: ForegroundNotificationConfig(
+            notificationTitle: title,
+            notificationText: text,
+            notificationChannelName: 'Onlaýn iş',
+            setOngoing: true,
+            enableWakeLock: true,
+          ),
+        );
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        settings = AppleSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: distanceFilter,
+          activityType: ActivityType.automotiveNavigation,
+          pauseLocationUpdatesAutomatically: false,
+          allowBackgroundLocationUpdates: true,
+          showBackgroundLocationIndicator: true,
+        );
+      }
+    }
+    return Geolocator.getPositionStream(locationSettings: settings);
+  }
 
   static Future<void> openSettings() => Geolocator.openAppSettings();
 }

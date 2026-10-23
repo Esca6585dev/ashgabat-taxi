@@ -9,6 +9,7 @@ import (
 
 	"github.com/ashgabat-taxi/backend/internal/middleware"
 	"github.com/ashgabat-taxi/backend/internal/models"
+	"github.com/ashgabat-taxi/backend/internal/services"
 	"github.com/ashgabat-taxi/backend/internal/utils"
 )
 
@@ -165,7 +166,11 @@ func (h *Handler) AvailableOrders(c *fiber.Ctx) error {
 		DistanceKm float64      `json:"distance_km"`
 	}
 	out := []item{}
+	now := time.Now()
 	for _, o := range orders {
+		if !services.DispatchDue(&o, now) {
+			continue // booked for later: not offered yet
+		}
 		dist := utils.Haversine(d.Lat, d.Lng, o.PickupLat, o.PickupLng)
 		if dist <= h.Cfg.DispatchMaxRadiusKm && (o.Tariff == nil || strings.Contains(d.TariffCodes, o.Tariff.Code)) {
 			out = append(out, item{Order: o, DistanceKm: utils.RoundMoney(dist*20) / 20})

@@ -2,6 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Onlaýn wagtyňyz programma fonda bolsa-da, müşderiler sizi kartada görer ýaly ýerleşişiňiz iberilýär.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>remote-notification</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Sargytlary golaýdaky müşderilerden almak we ýolagçy size ýoluňyzy görer ýaly ýerleşişiňiz ulanylýar.</string>
 	<key>LSApplicationQueriesSchemes</key>

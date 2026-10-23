@@ -93,8 +93,15 @@ func (h *Handler) CreateOrder(c *fiber.Ctx) error {
 		return utils.Err(c, 400, "barmaly ýer gaty ýakyn")
 	}
 	at := time.Now()
-	if req.ScheduledAt != nil && req.ScheduledAt.After(at) {
-		at = *req.ScheduledAt
+	if req.ScheduledAt != nil {
+		switch {
+		case req.ScheduledAt.After(at.AddDate(0, 0, 7)):
+			return utils.Err(c, 400, "iň köp 7 gün öňünden sargyt edip bolýar")
+		case req.ScheduledAt.Before(at.Add(services.ScheduledLead)):
+			req.ScheduledAt = nil // sooner than the dispatch lead: just a normal ride now
+		default:
+			at = *req.ScheduledAt
+		}
 	}
 	price := h.Pricing.Price(&tariff, route.DistanceKm, route.DurationMin, at)
 
@@ -110,6 +117,9 @@ func (h *Handler) CreateOrder(c *fiber.Ctx) error {
 	}
 	pm := "cash"
 	if req.PaymentMethod == "card" {
+		if !h.Cfg.RideCardPayment {
+			return utils.Err(c, 400, "kart bilen töleg häzirlikçe elýeterli däl, nagt saýlaň")
+		}
 		pm = "card"
 	}
 	ot := "ride"
@@ -145,7 +155,7 @@ func (h *Handler) CreateOrder(c *fiber.Ctx) error {
 		h.DB.Model(promo).Update("uses", promo.Uses+1)
 	}
 	full, _ := h.loadOrder(o.ID)
-	if full.ScheduledAt == nil || full.ScheduledAt.Before(time.Now().Add(15*time.Minute)) {
+	if services.DispatchDue(full, time.Now()) {
 		go h.Dispatch.OfferOrder(full)
 	}
 	h.Hub.BroadcastRole(string(models.RoleAdmin), "order.created", full)

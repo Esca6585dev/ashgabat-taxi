@@ -65,9 +65,12 @@ class _ActiveRidePanelState extends State<ActiveRidePanel> {
     String title;
     String? sub;
     switch (o.status) {
+      case OrderStatus.searching when o.isBookedAhead:
+        title = 'Bellenen sargyt · ${whenText(o.scheduledAt!)}';
+        sub = 'Sürüji 15 minut öň gözlenip başlanar';
       case OrderStatus.searching:
         title = 'Sürüji gözlenýär...';
-        sub = _elapsed(o.createdAt);
+        sub = o.scheduledAt != null ? 'Bellenen wagt: ${whenText(o.scheduledAt!)}' : _elapsed(o.createdAt);
       case OrderStatus.accepted:
         title = 'Sürüji size gelýär';
         sub = 'Kabul edildi ${_elapsed(o.acceptedAt)} öň';
@@ -91,7 +94,7 @@ class _ActiveRidePanelState extends State<ActiveRidePanel> {
         top: false,
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            if (o.status == OrderStatus.searching)
+            if (o.status == OrderStatus.searching && !o.isBookedAhead)
               const Padding(padding: EdgeInsets.only(right: 12), child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 3))),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

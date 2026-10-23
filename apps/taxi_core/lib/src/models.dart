@@ -245,6 +245,7 @@ class Order {
   final String paymentMethod;
   final String comment;
   final String recipientPhone;
+  final DateTime? scheduledAt;
   final DateTime? createdAt;
   final DateTime? acceptedAt;
   final DateTime? arrivedAt;
@@ -281,6 +282,7 @@ class Order {
     this.paymentMethod = 'cash',
     this.comment = '',
     this.recipientPhone = '',
+    this.scheduledAt,
     this.createdAt,
     this.acceptedAt,
     this.arrivedAt,
@@ -318,6 +320,7 @@ class Order {
         paymentMethod: _s(j['payment_method']).isEmpty ? 'cash' : _s(j['payment_method']),
         comment: _s(j['comment']),
         recipientPhone: _s(j['recipient_phone']),
+        scheduledAt: _t(j['scheduled_at']),
         createdAt: _t(j['created_at']),
         acceptedAt: _t(j['accepted_at']),
         arrivedAt: _t(j['arrived_at']),
@@ -331,6 +334,10 @@ class Order {
       );
 
   bool get isActive => OrderStatus.active.contains(status);
+
+  /// Booked for later and drivers are not searched yet (the server starts 15 min before).
+  bool get isBookedAhead =>
+      status == OrderStatus.searching && scheduledAt != null && scheduledAt!.isAfter(DateTime.now().add(const Duration(minutes: 15)));
   bool get isDelivery => orderType == 'delivery';
   LatLngPoint get pickup => LatLngPoint(pickupLat, pickupLng);
   LatLngPoint get dropoff => LatLngPoint(dropoffLat, dropoffLng);
@@ -593,6 +600,7 @@ class AppConfig {
   final String currency;
   final String supportPhone;
   final bool cardTopUp;
+  final List<String> paymentMethods;
 
   const AppConfig({
     this.city = 'Aşgabat',
@@ -601,6 +609,7 @@ class AppConfig {
     this.currency = 'TMT',
     this.supportPhone = '+99312000000',
     this.cardTopUp = false,
+    this.paymentMethods = const ['cash'],
   });
 
   factory AppConfig.fromJson(Map<String, dynamic> j) => AppConfig(
@@ -610,5 +619,8 @@ class AppConfig {
         currency: _s(j['currency']).isEmpty ? 'TMT' : _s(j['currency']),
         supportPhone: _s(j['support_phone']),
         cardTopUp: _b(j['card_topup']),
+        paymentMethods: j['payment_methods'] is List ? (j['payment_methods'] as List).map((e) => '$e').toList() : const ['cash'],
       );
+
+  bool get rideCard => paymentMethods.contains('card');
 }

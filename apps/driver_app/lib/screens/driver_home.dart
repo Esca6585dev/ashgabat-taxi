@@ -278,6 +278,10 @@ class _DriverHomeState extends State<DriverHome> {
         style: const TextStyle(color: TaxiColors.grey),
       ),
       const SizedBox(height: 12),
+      if (o.scheduledAt != null) ...[
+        Text('Bellenen wagt: ${whenText(o.scheduledAt!)}', style: const TextStyle(fontWeight: FontWeight.w700, color: TaxiColors.blue)),
+        const SizedBox(height: 8),
+      ],
       RouteText(from: o.pickupAddress, to: o.dropoffAddress),
       if (o.comment.isNotEmpty) ...[
         const SizedBox(height: 8),

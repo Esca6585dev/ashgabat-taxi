@@ -26,7 +26,7 @@ func (h *Handler) PublicConfig(c *fiber.Ctx) error {
 		"support_phone":   h.Cfg.SupportPhone,
 		"otp_ttl_min":     h.Cfg.OTPTTLMin,
 		"min_app_version": 1,
-		"payment_methods": []string{"cash", "card"},
+		"payment_methods": h.paymentMethods(),
 		"card_topup":      h.Gateway != nil,
 	})
 }
@@ -138,4 +138,13 @@ func (h *Handler) NearbyDrivers(c *fiber.Ctx) error {
 		out = append(out, pos{cd.Driver.Lat, cd.Driver.Lng, cd.Driver.Heading, cd.Driver.TariffCodes})
 	}
 	return utils.OK(c, out)
+}
+
+// paymentMethods are the ride payment options offered to clients.
+// Card is hidden until rides are actually charged online (RIDE_CARD_PAYMENT=true).
+func (h *Handler) paymentMethods() []string {
+	if h.Cfg.RideCardPayment {
+		return []string{"cash", "card"}
+	}
+	return []string{"cash"}
 }

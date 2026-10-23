@@ -60,7 +60,8 @@ geldim → ýola çyk → tamamla → baha → gazanç ýoluny barlaýar.
 - Telefon + SMS kod bilen giriş
 - Kartada başlangyç nokat (pin), salgy gözlegi, kartadan saýlamak, saklanan salgylar (Öý, Iş…)
 - Ugur we baha: ähli tarifler boýunça baha, golaýdaky sürüjiler, gijeki tarif
-- Nagt / kart, promokod, sürüjä teswir, eltip bermek üçin alyjynyň telefony
+- Nagt (kart diňe `RIDE_CARD_PAYMENT=true` bolsa), promokod, sürüjä teswir, eltip bermek üçin alyjynyň telefony
+- Öňünden sargyt: 7 güne çenli islendik wagt; sürüji 15 minut öň gözlenip başlanýar
 - Janly sargyt: sürüji gözlenýär → sürüji ýolda (karta üstünde hereket edýär) → garaşýar → ýolda → baha
 - Sürüjä jaň, ýatyrmak (sebäbi bilen), syýahatlar taryhy, goldaw gullugy, profil
 
@@ -68,7 +69,8 @@ geldim → ýola çyk → tamamla → baha → gazanç ýoluny barlaýar.
 
 - Giriş: SMS kod ýa-da telefon + parol (paroly admin berýär ýa-da sürüji profilde özi belleýär)
 - Awtoulag we şahadatnama bilen hasaba durmak → admin tassyklaýança garaşmak
-- Onlaýn / oflaýn, GPS ýerleşişi WebSocket arkaly (her 30 sekuntda hem täzelenýär)
+- Onlaýn / oflaýn, GPS ýerleşişi WebSocket arkaly (her 30 sekuntda hem täzelenýär);
+  onlaýn wagty programma fonda bolsa-da GPS gidýär (Android: «Siz onlaýn» bildirişi bilen foreground service)
 - Täze sargyt kartoçkasy: baha, aralyk, 30 sekunt sanaw, kabul et / ýok
 - Ädimler: Geldim → Ýola çyk → Tamamla; nawigasiýa (Google/Yandex kartalaryny açýar), müşderä jaň
 - Tamamlananda nagt alynmaly mukdar we komissiýa; müşderä baha
@@ -80,6 +82,5 @@ bilen berilýär (CI-de GitHub Variables). Bolmasa push öçük, programma adaty
 
 ## Häzirlikçe ýok (indiki ädimler)
 
-- Sürüji programmasy ýapyk (fon) wagtynda GPS ibermek — häzir programma açyk durmaly.
 - Müşderiniň syýahat üçin kart bilen onlaýn tölegi (sürüjiniň balansy kart bilen dolýar, syýahat tölegi heniz nagt / bellik).
 - Köp sanly ulanyjy üçin OpenStreetMap-yň mugt plitkalary ýeterlik däl: öz plitka serweriňizi guruň we `TILE_URL` beriň.

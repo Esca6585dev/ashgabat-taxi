@@ -162,8 +162,10 @@ class ApiClient {
     String? promoCode,
     String? comment,
     String? recipientPhone,
+    DateTime? scheduledAt,
   }) async =>
       Order.fromJson(_map(await post('/orders/', {
+        if (scheduledAt != null) 'scheduled_at': scheduledAt.toUtc().toIso8601String(),
         'tariff_id': tariffId,
         'pickup': pickup.toPointJson(),
         'dropoff': dropoff.toPointJson(),

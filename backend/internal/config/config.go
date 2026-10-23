@@ -67,6 +67,7 @@ type Config struct {
 	RBSLanguage         string
 	TopUpMin            float64
 	TopUpMax            float64
+	RideCardPayment     bool   // clients may choose "card" for a ride (only with a real ride-payment flow)
 	PublicURL           string // https://api.example.tm — for bank return links; empty = from the request
 	Currency            string
 	CityLat             float64
@@ -182,6 +183,7 @@ func Load() *Config {
 		RBSLanguage:         env("PAYMENT_RBS_LANGUAGE", "ru"),
 		TopUpMin:            envFloat("TOPUP_MIN", 5),
 		TopUpMax:            envFloat("TOPUP_MAX", 5000),
+		RideCardPayment:     env("RIDE_CARD_PAYMENT", "false") == "true",
 		PublicURL:           env("PUBLIC_URL", ""),
 		Currency:            env("CURRENCY", "TMT"),
 		CityLat:             envFloat("CITY_LAT", 37.9601),

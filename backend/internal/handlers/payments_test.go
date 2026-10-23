@@ -226,3 +226,34 @@ func TestBillingSweep(t *testing.T) {
 		t.Fatalf("sweep renewal: online=%v balance=%v", on, b)
 	}
 }
+
+func TestScheduledRide(t *testing.T) {
+	e := startServer(t)
+	admin := e.adminToken()
+	drv, _ := e.approvedDriver("+99362100006", admin)
+	e.call("POST", "/api/v1/driver/online", drv, map[string]any{"online": true, "lat": 37.96, "lng": 58.326})
+	client := e.login("+99365100006", "client")
+	trip := func(at time.Time) map[string]any {
+		return e.call("POST", "/api/v1/orders/", client, map[string]any{"tariff_id": 1, "scheduled_at": at.UTC().Format(time.RFC3339),
+			"pickup": map[string]any{"lat": 37.96, "lng": 58.326}, "dropoff": map[string]any{"lat": 37.93, "lng": 58.39}})
+	}
+	if r := trip(time.Now().AddDate(0, 0, 8)); r["success"] != false {
+		t.Fatalf("8 days ahead accepted: %v", r)
+	}
+	o := data(trip(time.Now().Add(2 * time.Hour)))
+	if o["scheduled_at"] == nil || o["status"] != "searching" {
+		t.Fatalf("booking: %v", o)
+	}
+	if list := e.call("GET", "/api/v1/driver/orders/available", drv, nil)["data"].([]any); len(list) != 0 {
+		t.Fatalf("ride booked for later offered now: %v", list)
+	}
+	if r := e.call("POST", fmt.Sprintf("/api/v1/orders/%v/cancel", o["id"]), client, map[string]any{"reason": "test"}); r["success"] != true {
+		t.Fatalf("cancel booking: %v", r)
+	}
+	// card is refused while ride card payment is off
+	r := e.call("POST", "/api/v1/orders/", client, map[string]any{"tariff_id": 1, "payment_method": "card",
+		"pickup": map[string]any{"lat": 37.96, "lng": 58.326}, "dropoff": map[string]any{"lat": 37.93, "lng": 58.39}})
+	if r["success"] != false {
+		t.Fatalf("card ride accepted: %v", r)
+	}
+}
