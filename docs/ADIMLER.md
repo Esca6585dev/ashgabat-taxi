@@ -10,16 +10,25 @@ Ulgam üç bölekden durýar:
 
 ### Docker bilen (önümçilik)
 
+Serwerde Docker we `docker compose` gurnalan bolmaly. Domen (meselem `api.taxi.tm`) serweriň IP-sine görkezmeli,
+80 we 443 portlary açyk bolmaly.
+
 ```bash
-export JWT_SECRET=$(openssl rand -hex 32)
-export ADMIN_PASSWORD='güýçli-parol'
-# SMS (SMPP) maglumatlaryny taslamanyň kök bukjasyndaky .env faýlyna ýazyň (git-e goşulmaýar), aşakda seret
-docker compose up -d --build
+git clone https://github.com/Esca6585dev/ashgabat-taxi.git && cd ashgabat-taxi
+cp .env.example .env
+nano .env        # JWT_SECRET (openssl rand -hex 32), ADMIN_PASSWORD, DOMAIN, PUBLIC_URL, SMPP_…
+docker compose --profile https up -d --build
+docker compose logs -f api      # «listening on :8080 (production)» we «smpp: bound to …» ýazgylaryny barlaň
 ```
 
-- API: `http://SERWER:8080/api/v1`, admin panel: `http://SERWER:8080/admin`
-- Öňünde HTTPS üçin nginx / Caddy goýuň (programmalar `wss://` bilen birikýär).
+- `--profile https` HTTPS üçin Caddy-ni hem işledýär. Sertifikat (Let's Encrypt) awtomatik alynýar we täzelenýär.
+  Domen ýok bolsa, `--profile https` goşmaň: API `http://SERWER_IP:8080` salgysynda işleýär.
+- API: `https://DOMAIN/api/v1`, admin panel: `https://DOMAIN/admin`, web programmalar: `https://DOMAIN/app/` we `/driver/`.
+- `JWT_SECRET` bellenmese ýa-da esasy baha galsa, serwer önümçilikde işe başlamaýar (howpsuzlyk üçin).
 - Admin: `ADMIN_PHONE` / `ADMIN_PASSWORD` bilen giriň we paroly **Sazlamalar** bölüminde üýtgediň.
+- Maglumatlar `pgdata` Docker göwrüminde saklanýar. Ätiýaçlyk nusga:
+  `docker compose exec db pg_dump -U taxi taxi > backup.sql`
+- Täzelemek: `git pull && docker compose --profile https up -d --build`
 
 ### Docker-siz (ösüş)
 

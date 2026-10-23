@@ -72,5 +72,21 @@ services:
   #   volumes:
   #     - ./osrm:/data
 
+  # HTTPS (recommended): docker compose --profile https up -d   — needs DOMAIN in .env
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    depends_on: [api]
+    environment:
+      DOMAIN: ${DOMAIN:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  caddy_data:

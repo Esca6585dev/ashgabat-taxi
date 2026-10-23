@@ -4,10 +4,13 @@ WORKDIR /src
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 COPY backend/ .
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/server ./cmd/server
+# timetzdata embeds the zone database (Asia/Ashgabat) so the runtime image needs no tzdata package
+RUN CGO_ENABLED=0 go build -tags timetzdata -ldflags="-s -w" -o /out/server ./cmd/server
 
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 app
+# CA roots for outgoing HTTPS (Firebase, bank, OpenStreetMap) come from the build stage: no package download here
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+RUN adduser -D -u 10001 app
 WORKDIR /app
 COPY --from=build /out/server /app/server
 COPY backend/web /app/web

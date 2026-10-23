@@ -1,0 +1,7 @@
+# HTTPS in front of the API, admin panel and web apps.
+# Caddy gets and renews the Let's Encrypt certificate itself: DOMAIN must point to this server,
+# ports 80 and 443 must be open. WebSocket (/ws) is proxied automatically.
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy api:8080
+}

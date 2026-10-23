@@ -27,6 +27,19 @@ import (
 
 func main() {
 	cfg := config.Load()
+	if !cfg.IsDev() {
+		// a default secret lets anyone forge login tokens
+		switch cfg.JWTSecret {
+		case "", "change-me-please", "change-me-in-production", "please-change-this-secret":
+			log.Fatal("APP_ENV=production: set a long random JWT_SECRET (e.g. openssl rand -hex 32)")
+		}
+		if cfg.OTPFixedCode != "" {
+			log.Println("WARNING: OTP_FIXED_CODE is set in production — anyone can log in to any phone number with it")
+		}
+		if cfg.AdminPassword == "admin12345" {
+			log.Println("WARNING: default ADMIN_PASSWORD — change it in the admin panel (Sazlamalar) right after the first login")
+		}
+	}
 	db := database.Connect(cfg)
 	database.Migrate(db)
 	database.Seed(db, cfg)
