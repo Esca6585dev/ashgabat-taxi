@@ -57,6 +57,40 @@ Sürüji programmasyna iki ýol bilen girip bolýar: **SMS kod** ýa-da **telefo
 - Sürüji özi hem programmada **Profil → Parol bellemek** arkaly parol goýup bilýär.
 - 5 gezek ýalňyş parol girizilse, ol belgi 15 minut gulplanýar (SMS kod bilen girip bolýar).
 
+## Sürüjileriň tölegi we kart bilen balans doldurmak
+
+### Iki töleg görnüşi
+
+| Görnüş | Nähili işleýär |
+|---|---|
+| **Göterim** (`commission`) | Her syýahatdan komissiýa (`COMMISSION_RATE`, meselem 10%). Nagt syýahatda balansdan aýrylýar. Balans `DRIVER_MIN_BALANCE`-dan (meselem −50 TMT) az bolsa, sürüji sargyt alyp bilmeýär. |
+| **Aýlyk** (`monthly`) | 30 günde bir gezek `MONTHLY_FEE` (ýa-da sürüjiniň öz bahasy) balansdan alynýar, syýahatlardan komissiýa alynmaýar. Möhleti gutaranda balansda pul bar bolsa özi uzalýar, ýok bolsa sürüji oflaýn edilýär we «Balansy dolduryň» habaryny alýar. |
+
+Admin panel → **Sürüjiler → Üýtget**: töleg görnüşi, komissiýa we aýlyk töleg (0 = esasy baha).
+Täze sürüjileriň görnüşi: `DEFAULT_DRIVER_PLAN`.
+
+### Kart bilen doldurmak
+
+Sürüji programmasy → **Balans we gazanç → Kart bilen doldur** → mukdar → bankyň kart sahypasy açylýar →
+töleg geçen badyna balans dolýar (programma özi barlaýar, push hem gelýär).
+
+- Serwer balansy diňe bankdan tölegiň ýagdaýyny özi soranyndan soň doldurýar; bir töleg iki gezek goşulmaýar.
+- Sürüji bank sahypasyny ýapsa-da, serwer her minutda garaşýan tölegleri bankdan barlaýar (1 sagada çenli).
+- Admin panel → **Kart tölegleri**: ähli tölegler, şu gün tölenen jemi.
+
+Bank bilen birikdirmek (Altyn Asyr / türkmen banklarynyň e-commerce, RBS REST API):
+
+```
+PAYMENT_PROVIDER=rbs
+PAYMENT_RBS_URL=https://mpi.gov.tm/payment/rest     # bank başga salgy berse, şony ýazyň
+PAYMENT_RBS_USERNAME=…                               # bankyň berýän merchant logini
+PAYMENT_RBS_PASSWORD='…'
+PUBLIC_URL=https://api.siziň-domen.tm                # bank töleg soňy şu salga gaýtarýar
+```
+
+Bank bilen şertnama baglaşylanda merchant logini/paroly we synag (test) salgysy berilýär — ilki synag salgysy bilen barlaň.
+`PAYMENT_PROVIDER=demo` diňe synag üçin: hakyky pul alynmaýar (önümçilikde ulanmaň).
+
 ## Push bildirişler (Firebase)
 
 Programma ýapyk wagty hem telefon habar berýär:

@@ -140,15 +140,19 @@ func NewPusherWith(db *gorm.DB, s PushSender, currency string) *Pusher {
 var pushTypes = map[string]bool{
 	"order.new": true, "order.accepted": true, "order.status": true, "order.completed": true,
 	"order.cancelled": true, "order.requeued": true, "driver.status": true, "ticket.reply": true,
+	"balance.changed": true, "billing.required": true,
 }
 
 // eventData is the union of the payloads the hub sends for pushTypes.
 type eventData struct {
 	models.Order
-	Inner     *models.Order `json:"order"`         // order.new, order.requeued
-	Reason    string        `json:"reason"`        // order.requeued
-	RejectWhy string        `json:"reject_reason"` // driver.status
-	Reply     string        `json:"reply"`         // ticket.reply
+	Inner     *models.Order `json:"order"`              // order.new, order.requeued
+	Reason    string        `json:"reason"`             // order.requeued
+	RejectWhy string        `json:"reject_reason"`      // driver.status
+	Reply     string        `json:"reply"`              // ticket.reply
+	Amount    float64       `json:"amount"`             // balance.changed
+	Message   string        `json:"message"`            // billing.required
+	SubUntil  *time.Time    `json:"subscription_until"` // balance.changed by a monthly renewal
 }
 
 // Event is the hub hook: called for every SendTo. Returns immediately; delivery runs in the background.
@@ -235,6 +239,17 @@ func (p *Pusher) Compose(role models.Role, typ string, ev *eventData) (PushMessa
 			}
 		case "ticket.reply":
 			return msg("Goldaw gullugy jogap berdi", ev.Reply, false)
+		case "balance.changed":
+			switch {
+			case ev.SubUntil != nil:
+				return msg("Aýlyk töleg alyndy · "+p.money(-ev.Amount), ev.SubUntil.Local().Format("02.01.2006")+" çenli işläp bilersiňiz.", false)
+			case ev.Amount > 0:
+				return msg("Balans dolduryldy · +"+p.money(ev.Amount), "", false)
+			case ev.Amount < 0:
+				return msg("Balansdan alyndy · "+p.money(-ev.Amount), "", false)
+			}
+		case "billing.required":
+			return msg("Balansy dolduryň", ev.Message, true)
 		}
 	case models.RoleClient:
 		switch typ {

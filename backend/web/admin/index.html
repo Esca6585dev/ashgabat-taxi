@@ -32,6 +32,7 @@
       <a href="#clients" data-page="clients">👤 Müşderiler</a>
       <a href="#tariffs" data-page="tariffs">💰 Tarifler</a>
       <a href="#promos" data-page="promos">🎁 Promokodlar</a>
+      <a href="#payments" data-page="payments">💳 Kart tölegleri</a>
       <a href="#tickets" data-page="tickets">💬 Ýüztutmalar <span id="ticketBadge" class="badge hidden"></span></a>
       <a href="#settings" data-page="settings">⚙️ Sazlamalar</a>
     </nav>
@@ -100,7 +101,7 @@
         <button id="driverAccountAdd" class="btn primary">+ Sürüji hasaby (parol bilen)</button>
       </div>
       <div class="card table-wrap"><table id="driversTable"><thead><tr>
-        <th>ID</th><th>Sürüji</th><th>Telefon</th><th>Awtoulag</th><th>Tarifler</th><th>Reýting</th><th>Gatnaw</th><th>Balans</th><th>Komissiýa</th><th>Ýagdaý</th><th></th>
+        <th>ID</th><th>Sürüji</th><th>Telefon</th><th>Awtoulag</th><th>Tarifler</th><th>Reýting</th><th>Gatnaw</th><th>Balans</th><th>Töleg görnüşi</th><th>Ýagdaý</th><th></th>
       </tr></thead><tbody></tbody></table></div>
       <div id="driversPager" class="pager"></div>
     </section>
@@ -132,6 +133,18 @@
     </section>
 
     <!-- TICKETS -->
+    <section data-page="payments" class="page">
+      <div class="toolbar">
+        <select id="paymentStatus"><option value="">Ählisi</option><option value="paid">Tölenen</option><option value="pending">Garaşylýar</option><option value="failed">Geçmedik</option></select>
+        <button id="paymentRefresh" class="btn">Täzele</button>
+        <span id="paymentSummary" class="muted"></span>
+      </div>
+      <div class="card table-wrap"><table id="paymentsTable"><thead><tr>
+        <th>ID</th><th>Wagt</th><th>Sürüji</th><th>Mukdar</th><th>Ýagdaý</th><th>Bank</th><th>Bellik</th>
+      </tr></thead><tbody></tbody></table></div>
+      <div id="paymentsPager" class="pager"></div>
+    </section>
+
     <section data-page="tickets" class="page">
       <div class="toolbar">
         <select id="ticketStatus"><option value="open">Açyk</option><option value="resolved">Çözülen</option><option value="">Ählisi</option></select>

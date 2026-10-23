@@ -40,10 +40,20 @@ func main() {
 	router := services.NewRouter(cfg)
 	geo := services.NewGeocoder(cfg)
 	h := handlers.New(db, cfg, hub, dispatcher, otp, router, geo)
+	h.Billing = services.NewBilling(db, cfg, hub)
+	dispatcher.Billing = h.Billing
+	h.Gateway = services.NewPaymentGateway(cfg)
+	if cfg.PaymentProvider == "rbs" && (cfg.RBSUser == "" || cfg.RBSPassword == "") {
+		log.Fatal("PAYMENT_PROVIDER=rbs: PAYMENT_RBS_USERNAME we PAYMENT_RBS_PASSWORD gerek")
+	}
+	if cfg.PaymentProvider == "demo" && !cfg.IsDev() {
+		log.Println("WARNING: PAYMENT_PROVIDER=demo in production — balances can be topped up without real money")
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go dispatcher.Run(ctx)
+	go h.ReconcilePayments(ctx)
 
 	app := fiber.New(fiber.Config{
 		AppName:               "Ashgabat Taxi API",

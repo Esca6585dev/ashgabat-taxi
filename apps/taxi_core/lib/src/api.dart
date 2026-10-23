@@ -245,5 +245,21 @@ class ApiClient {
   Future<void> rateClient(int id, int rating) => post('/driver/orders/$id/rate', {'rating': rating});
   Future<List<Order>> driverOrders({int page = 1}) async =>
       _list(await get('/driver/orders', {'page': page, 'limit': 30}), Order.fromJson);
+  /// Starts a card top-up; open [formUrl] (the bank page) and then poll [topUpStatus].
+  Future<({Payment payment, String formUrl})> createTopUp(double amount) async {
+    final d = _map(await post('/driver/topup', {'amount': amount}));
+    return (payment: Payment.fromJson(_map(d['payment'])), formUrl: d['form_url'].toString());
+  }
+
+  Future<({Payment payment, double balance})> topUpStatus(int id) async {
+    final d = _map(await get('/driver/topup/$id'));
+    return (payment: Payment.fromJson(_map(d['payment'])), balance: (d['balance'] as num?)?.toDouble() ?? 0);
+  }
+
+  Future<List<Payment>> payments() async => _list(await get('/driver/payments'), Payment.fromJson);
+
+  /// Monthly plan: pay the next 30 days from the balance now.
+  Future<DriverProfile> renewSubscription() async => DriverProfile.fromJson(_map(await post('/driver/subscription')));
+
   Future<Earnings> earnings() async => Earnings.fromJson(_map(await get('/driver/earnings')));
 }

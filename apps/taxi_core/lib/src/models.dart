@@ -99,6 +99,9 @@ class DriverProfile {
   final int totalRides;
   final int? currentOrderId;
   final String rejectReason;
+  final String paymentPlan; // commission | monthly
+  final double monthlyFee;
+  final DateTime? subscriptionUntil;
 
   const DriverProfile({
     required this.id,
@@ -121,6 +124,9 @@ class DriverProfile {
     this.totalRides = 0,
     this.currentOrderId,
     this.rejectReason = '',
+    this.paymentPlan = 'commission',
+    this.monthlyFee = 0,
+    this.subscriptionUntil,
   });
 
   factory DriverProfile.fromJson(Map<String, dynamic> j) => DriverProfile(
@@ -144,7 +150,12 @@ class DriverProfile {
         totalRides: _i(j['total_rides']),
         currentOrderId: _iN(j['current_order_id']),
         rejectReason: _s(j['reject_reason']),
+        paymentPlan: _s(j['payment_plan']).isEmpty ? 'commission' : _s(j['payment_plan']),
+        monthlyFee: _d(j['monthly_fee']),
+        subscriptionUntil: _t(j['subscription_until']),
       );
+
+  bool get isMonthly => paymentPlan == 'monthly';
 
   String get carTitle => [carColor, carBrand, carModel].where((s) => s.isNotEmpty).join(' ');
   List<String> get tariffList => tariffCodes.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
@@ -488,6 +499,13 @@ class Earnings {
   final double rating;
   final double commissionRate;
   final List<Transaction> transactions;
+  final String paymentPlan;
+  final double monthlyFee;
+  final DateTime? subscriptionUntil;
+  final double minBalance;
+  final bool cardTopUp;
+  final double topUpMin;
+  final double topUpMax;
 
   const Earnings({
     required this.today,
@@ -498,6 +516,13 @@ class Earnings {
     required this.rating,
     required this.commissionRate,
     required this.transactions,
+    this.paymentPlan = 'commission',
+    this.monthlyFee = 0,
+    this.subscriptionUntil,
+    this.minBalance = 0,
+    this.cardTopUp = false,
+    this.topUpMin = 5,
+    this.topUpMax = 5000,
   });
 
   factory Earnings.fromJson(Map<String, dynamic> j) => Earnings(
@@ -509,7 +534,43 @@ class Earnings {
         rating: j['rating'] == null ? 5 : _d(j['rating']),
         commissionRate: _d(j['commission_rate']),
         transactions: _list(j['transactions'], Transaction.fromJson),
+        paymentPlan: _s(j['payment_plan']).isEmpty ? 'commission' : _s(j['payment_plan']),
+        monthlyFee: _d(j['monthly_fee']),
+        subscriptionUntil: _t(j['subscription_until']),
+        minBalance: _d(j['min_balance']),
+        cardTopUp: _b(j['card_topup']),
+        topUpMin: j['topup_min'] == null ? 5 : _d(j['topup_min']),
+        topUpMax: j['topup_max'] == null ? 5000 : _d(j['topup_max']),
       );
+
+  bool get isMonthly => paymentPlan == 'monthly';
+  bool get subscriptionActive => subscriptionUntil != null && subscriptionUntil!.isAfter(DateTime.now());
+}
+
+/// A card top-up of the driver balance (bank payment page).
+class Payment {
+  final int id;
+  final double amount;
+  final String status; // pending | paid | failed
+  final String formUrl;
+  final String error;
+  final DateTime? createdAt;
+  final DateTime? paidAt;
+
+  const Payment({required this.id, required this.amount, required this.status, this.formUrl = '', this.error = '', this.createdAt, this.paidAt});
+
+  factory Payment.fromJson(Map<String, dynamic> j) => Payment(
+        id: _i(j['id']),
+        amount: _d(j['amount']),
+        status: _s(j['status']),
+        formUrl: _s(j['form_url']),
+        error: _s(j['error']),
+        createdAt: _t(j['created_at']),
+        paidAt: _t(j['paid_at']),
+      );
+
+  bool get isPending => status == 'pending';
+  bool get isPaid => status == 'paid';
 }
 
 /// An order offered to a driver (WS "order.new" or /driver/orders/available).
@@ -531,6 +592,7 @@ class AppConfig {
   final double cityLng;
   final String currency;
   final String supportPhone;
+  final bool cardTopUp;
 
   const AppConfig({
     this.city = 'Aşgabat',
@@ -538,6 +600,7 @@ class AppConfig {
     this.cityLng = 58.3261,
     this.currency = 'TMT',
     this.supportPhone = '+99312000000',
+    this.cardTopUp = false,
   });
 
   factory AppConfig.fromJson(Map<String, dynamic> j) => AppConfig(
@@ -546,5 +609,6 @@ class AppConfig {
         cityLng: j['city_lng'] == null ? 58.3261 : _d(j['city_lng']),
         currency: _s(j['currency']).isEmpty ? 'TMT' : _s(j['currency']),
         supportPhone: _s(j['support_phone']),
+        cardTopUp: _b(j['card_topup']),
       );
 }

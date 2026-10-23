@@ -31,6 +31,10 @@ type Dispatcher struct {
 
 	mu     sync.Mutex
 	offers map[uint]*offerState // orderID -> state
+
+	// Billing, when set, keeps drivers without a paid plan / enough balance out of dispatch.
+	Billing *Billing
+	ticks   int
 }
 
 type offerState struct {
@@ -103,10 +107,13 @@ func (d *Dispatcher) NearbyDrivers(lat, lng, radiusKm float64, tariffCode string
 	dLat := radiusKm / 111.0
 	dLng := radiusKm / 85.0 // ~ cos(38°)*111
 	var drivers []models.Driver
-	d.db.Preload("User").
+	q := d.db.Preload("User").
 		Where("is_online = ? AND status = ? AND current_order_id IS NULL AND last_seen_at > ?", true, models.DriverApproved, cut).
-		Where("lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?", lat-dLat, lat+dLat, lng-dLng, lng+dLng).
-		Find(&drivers)
+		Where("lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?", lat-dLat, lat+dLat, lng-dLng, lng+dLng)
+	if d.Billing != nil {
+		q = d.Billing.WorkFilter(q)
+	}
+	q.Find(&drivers)
 	out := make([]DriverCandidate, 0, len(drivers))
 	for _, dr := range drivers {
 		if tariffCode != "" && !driverServes(dr, tariffCode) {
@@ -211,6 +218,12 @@ func (d *Dispatcher) tick() {
 		}
 	}
 	d.mu.Unlock()
+
+	// once a minute: renew monthly plans, take offline drivers who cannot pay
+	d.ticks++
+	if d.Billing != nil && d.ticks%12 == 1 {
+		d.Billing.Sweep()
+	}
 
 	// mark drivers offline when they stopped sending locations
 	cut := time.Now().Add(-time.Duration(d.cfg.DriverOfflineSec*3) * time.Second)

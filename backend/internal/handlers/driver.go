@@ -46,7 +46,7 @@ func (h *Handler) DriverRegister(c *fiber.Ctx) error {
 	}
 	d, err := h.driverOf(u.ID)
 	if err != nil {
-		d = &models.Driver{UserID: u.ID, Status: models.DriverPending, CommissionRate: h.Cfg.CommissionRate}
+		d = &models.Driver{UserID: u.ID, Status: models.DriverPending, CommissionRate: h.Cfg.CommissionRate, PaymentPlan: h.Cfg.DefaultDriverPlan}
 	}
 	if d.Status == models.DriverBlocked {
 		return utils.Err(c, 403, "sürüji hasabyňyz bloklanan")
@@ -103,6 +103,11 @@ func (h *Handler) DriverOnline(c *fiber.Ctx) error {
 	}
 	if !req.Online && d.CurrentOrderID != nil {
 		return utils.Err(c, 400, "işjeň sargyt wagtynda oflaýn bolup bolmaýar")
+	}
+	if req.Online {
+		if blocked, err := h.billingBlocked(c, d); blocked {
+			return err
+		}
 	}
 	upd := map[string]any{"is_online": req.Online, "last_seen_at": time.Now()}
 	if req.Lat != 0 || req.Lng != 0 {
@@ -184,6 +189,9 @@ func (h *Handler) AcceptOrder(c *fiber.Ctx) error {
 	}
 	if d.CurrentOrderID != nil {
 		return utils.Err(c, 400, "sizde eýýäm işjeň sargyt bar")
+	}
+	if blocked, err := h.billingBlocked(c, d); blocked {
+		return err
 	}
 	now := time.Now()
 	err = h.DB.Transaction(func(tx *gorm.DB) error {
@@ -295,6 +303,9 @@ func (h *Handler) CompleteOrder(c *fiber.Ctx) error {
 	if rate <= 0 {
 		rate = h.Cfg.CommissionRate
 	}
+	if d.PaymentPlan == models.PlanMonthly {
+		rate = 0 // monthly plan: the fee is paid per month, rides are commission-free
+	}
 	commission := utils.RoundMoney(final * rate)
 	err = h.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&models.Order{}).Where("id = ?", o.ID).Updates(map[string]any{
@@ -385,6 +396,8 @@ func (h *Handler) DriverEarnings(c *fiber.Ctx) error {
 		"today": sum(day), "week": sum(week), "month": sum(month),
 		"balance": d.Balance, "total_rides": d.TotalRides, "rating": d.User.Rating,
 		"commission_rate": d.CommissionRate, "transactions": txs, "currency": h.Cfg.Currency,
+		"payment_plan": d.PaymentPlan, "monthly_fee": h.monthlyFee(d), "subscription_until": d.SubscriptionUntil,
+		"min_balance": h.Cfg.DriverMinBalance, "card_topup": h.Gateway != nil, "topup_min": h.Cfg.TopUpMin, "topup_max": h.Cfg.TopUpMax,
 	})
 }
 
@@ -414,4 +427,11 @@ func (h *Handler) RateClient(c *fiber.Ctx) error {
 	h.DB.Model(o).Update("driver_rating", req.Rating)
 	h.applyRating(o.ClientID, req.Rating)
 	return utils.OK(c, true)
+}
+
+func (h *Handler) monthlyFee(d *models.Driver) float64 {
+	if h.Billing != nil {
+		return h.Billing.Fee(d)
+	}
+	return h.Cfg.MonthlyFee
 }

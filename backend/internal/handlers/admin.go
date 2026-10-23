@@ -148,6 +148,8 @@ func (h *Handler) AdminDriverStatus(c *fiber.Ctx) error {
 		Reason         string   `json:"reason"`
 		CommissionRate *float64 `json:"commission_rate"`
 		TariffCodes    *string  `json:"tariff_codes"`
+		PaymentPlan    *string  `json:"payment_plan"`
+		MonthlyFee     *float64 `json:"monthly_fee"`
 	}
 	if err := c.BodyParser(&req); err != nil {
 		return utils.Err(c, 400, "nädogry maglumat")
@@ -173,6 +175,18 @@ func (h *Handler) AdminDriverStatus(c *fiber.Ctx) error {
 	}
 	if req.TariffCodes != nil {
 		upd["tariff_codes"] = *req.TariffCodes
+	}
+	if req.PaymentPlan != nil {
+		if *req.PaymentPlan != models.PlanCommission && *req.PaymentPlan != models.PlanMonthly {
+			return utils.Err(c, 400, "töleg görnüşi: commission ýa-da monthly")
+		}
+		upd["payment_plan"] = *req.PaymentPlan
+	}
+	if req.MonthlyFee != nil {
+		if *req.MonthlyFee < 0 {
+			return utils.Err(c, 400, "aýlyk töleg otrisatel bolup bilmez")
+		}
+		upd["monthly_fee"] = *req.MonthlyFee // 0 = default MONTHLY_FEE
 	}
 	h.DB.Model(&d).Updates(upd)
 	h.DB.Preload("User").First(&d, id)

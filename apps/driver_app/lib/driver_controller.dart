@@ -284,6 +284,13 @@ class DriverController extends ChangeNotifier {
         }
         _say('status', 'Profiliňiziň ýagdaýy üýtgedi');
         _notify();
+      case 'billing.required':
+        // the server took us offline: plan expired or balance too low
+        online = false;
+        offers.clear();
+        if (order == null) _stopTracking();
+        _say('billing', '${m['message'] ?? 'Balansy dolduryň'}');
+        _notify();
       case 'balance.changed':
         refreshProfile();
       case 'account.blocked':

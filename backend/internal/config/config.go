@@ -54,10 +54,24 @@ type Config struct {
 	DriverOfflineSec    int
 
 	CommissionRate float64
-	Currency       string
-	CityLat        float64
-	CityLng        float64
-	SupportPhone   string
+
+	// Driver payment plans and card top-up
+	DefaultDriverPlan   string  // commission | monthly — plan of newly registered drivers
+	MonthlyFee          float64 // default fee of the monthly plan (per 30 days)
+	DriverMinBalance    float64 // commission plan: below this balance the driver cannot take orders
+	PaymentProvider     string  // "" (off) | demo | rbs
+	PaymentCurrencyCode string  // ISO 4217 numeric, TMT = 934
+	RBSURL              string
+	RBSUser             string
+	RBSPassword         string
+	RBSLanguage         string
+	TopUpMin            float64
+	TopUpMax            float64
+	PublicURL           string // https://api.example.tm — for bank return links; empty = from the request
+	Currency            string
+	CityLat             float64
+	CityLng             float64
+	SupportPhone        string
 
 	AdminDir string
 	SiteDir  string
@@ -99,6 +113,15 @@ func Load() *Config {
 			smsProvider = "smpp"
 		}
 	}
+	appEnv := env("APP_ENV", "development")
+	// card top-up: the demo bank only outside production unless chosen explicitly
+	paymentProvider := env("PAYMENT_PROVIDER", "")
+	if paymentProvider == "" && appEnv != "production" {
+		paymentProvider = "demo"
+	}
+	if paymentProvider == "none" {
+		paymentProvider = ""
+	}
 	dstFormat := env("SMPP_DST_FORMAT", "993")
 	dstTON, dstNPI := 1, 1 // international / ISDN
 	if dstFormat == "local" || dstFormat == "8" {
@@ -106,7 +129,7 @@ func Load() *Config {
 	}
 	return &Config{
 		Port:           env("PORT", "8080"),
-		Env:            env("APP_ENV", "development"),
+		Env:            appEnv,
 		JWTSecret:      env("JWT_SECRET", "change-me-in-production"),
 		JWTExpiryHours: envInt("JWT_EXPIRY_HOURS", 24*30),
 
@@ -147,10 +170,23 @@ func Load() *Config {
 		DriverOfflineSec:    envInt("DRIVER_OFFLINE_SEC", 120),
 
 		CommissionRate: envFloat("COMMISSION_RATE", 0.10),
-		Currency:       env("CURRENCY", "TMT"),
-		CityLat:        envFloat("CITY_LAT", 37.9601),
-		CityLng:        envFloat("CITY_LNG", 58.3261),
-		SupportPhone:   env("SUPPORT_PHONE", "+99312000000"),
+
+		DefaultDriverPlan:   env("DEFAULT_DRIVER_PLAN", "commission"),
+		MonthlyFee:          envFloat("MONTHLY_FEE", 300),
+		DriverMinBalance:    envFloat("DRIVER_MIN_BALANCE", -50),
+		PaymentProvider:     paymentProvider,
+		PaymentCurrencyCode: env("PAYMENT_CURRENCY_CODE", "934"),
+		RBSURL:              env("PAYMENT_RBS_URL", "https://mpi.gov.tm/payment/rest"),
+		RBSUser:             env("PAYMENT_RBS_USERNAME", ""),
+		RBSPassword:         env("PAYMENT_RBS_PASSWORD", ""),
+		RBSLanguage:         env("PAYMENT_RBS_LANGUAGE", "ru"),
+		TopUpMin:            envFloat("TOPUP_MIN", 5),
+		TopUpMax:            envFloat("TOPUP_MAX", 5000),
+		PublicURL:           env("PUBLIC_URL", ""),
+		Currency:            env("CURRENCY", "TMT"),
+		CityLat:             envFloat("CITY_LAT", 37.9601),
+		CityLng:             envFloat("CITY_LNG", 58.3261),
+		SupportPhone:        env("SUPPORT_PHONE", "+99312000000"),
 
 		AdminDir: env("ADMIN_DIR", "./web/admin"),
 		SiteDir:  env("SITE_DIR", "../website"),

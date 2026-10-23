@@ -77,6 +77,8 @@ class _DriverHomeState extends State<DriverHome> {
             actions: [TextButton(onPressed: () => Navigator.pop(d), child: const Text('Bolýar'))],
           ),
         );
+      case 'billing':
+        _needTopUp(n.text);
       default:
         showMsg(context, n.text);
     }
@@ -85,8 +87,38 @@ class _DriverHomeState extends State<DriverHome> {
   Future<void> _run(Future<void> Function() f) async {
     if (busy) return;
     setState(() => busy = true);
-    await guard(context, f);
+    try {
+      await f();
+    } on ApiException catch (e) {
+      // 402: no money for the plan -> offer a top-up instead of a bare error
+      if (mounted) e.status == 402 ? _needTopUp(e.message) : showMsg(context, e.message, error: true);
+    } catch (e) {
+      if (mounted) showMsg(context, 'Ýalňyşlyk: $e', error: true);
+    }
     if (mounted) setState(() => busy = false);
+  }
+
+  Future<void> _needTopUp(String why) async {
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        icon: const Icon(Icons.account_balance_wallet_outlined, size: 40),
+        title: const Text('Balansy dolduryň'),
+        content: Text(why),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Soňra')),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(120, 44)),
+            onPressed: () => Navigator.pop(d, true),
+            child: const Text('Doldur'),
+          ),
+        ],
+      ),
+    );
+    if (go == true && mounted) {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => EarningsScreen(session: widget.session)));
+      c.refreshProfile();
+    }
   }
 
   Future<void> _toggleOnline() async {

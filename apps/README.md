@@ -73,6 +73,7 @@ geldim → ýola çyk → tamamla → baha → gazanç ýoluny barlaýar.
 - Ädimler: Geldim → Ýola çyk → Tamamla; nawigasiýa (Google/Yandex kartalaryny açýar), müşderä jaň
 - Tamamlananda nagt alynmaly mukdar we komissiýa; müşderä baha
 - Balans, şu gün / hepde / aý gazanjy, hereketler, sargyt taryhy, goldaw
+- Töleg görnüşi: göterim ýa-da aýlyk; balansy kart bilen doldurmak (bank sahypasy), aýlyk tölegi balansdan tölemek
 
 Push bildirişler: Firebase sazlamalary `--dart-define=FIREBASE_API_KEY=… FIREBASE_APP_ID=… FIREBASE_SENDER_ID=… FIREBASE_PROJECT_ID=…`
 bilen berilýär (CI-de GitHub Variables). Bolmasa push öçük, programma adaty işleýär. Jikme-jik: `docs/ADIMLER.md`.
@@ -80,5 +81,5 @@ bilen berilýär (CI-de GitHub Variables). Bolmasa push öçük, programma adaty
 ## Häzirlikçe ýok (indiki ädimler)
 
 - Sürüji programmasy ýapyk (fon) wagtynda GPS ibermek — häzir programma açyk durmaly.
-- Kart bilen onlaýn töleg (bank şlýuzy) — häzir diňe bellik hökmünde.
+- Müşderiniň syýahat üçin kart bilen onlaýn tölegi (sürüjiniň balansy kart bilen dolýar, syýahat tölegi heniz nagt / bellik).
 - Köp sanly ulanyjy üçin OpenStreetMap-yň mugt plitkalary ýeterlik däl: öz plitka serweriňizi guruň we `TILE_URL` beriň.

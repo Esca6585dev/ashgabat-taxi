@@ -33,7 +33,12 @@ class DriverProfileScreen extends StatelessWidget {
             row('Ýyly', (d?.carYear ?? 0) > 0 ? '${d!.carYear}' : ''),
             row('Şahadatnama', d?.licenseNumber ?? ''),
             row('Tarifler', d?.tariffCodes ?? ''),
-            row('Komissiýa', '${((d?.commissionRate ?? 0) * 100).round()}%'),
+            row(
+              'Töleg görnüşi',
+              d?.isMonthly == true
+                  ? 'Aýlyk${d!.subscriptionUntil != null ? ' · ${dateTime(d.subscriptionUntil)} çenli' : ''}'
+                  : 'Göterim · ${((d?.commissionRate ?? 0) * 100).round()}%',
+            ),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),

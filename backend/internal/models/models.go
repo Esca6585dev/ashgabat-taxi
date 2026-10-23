@@ -70,6 +70,10 @@ type Driver struct {
 	TariffCodes    string       `gorm:"size:100;default:economy" json:"tariff_codes"`
 	Balance        float64      `json:"balance"`
 	CommissionRate float64      `json:"commission_rate"`
+	// PaymentPlan: "commission" (CommissionRate of every ride) or "monthly" (MonthlyFee from the balance, no commission)
+	PaymentPlan       string     `gorm:"size:16;default:commission" json:"payment_plan"`
+	MonthlyFee        float64    `json:"monthly_fee"`
+	SubscriptionUntil *time.Time `json:"subscription_until"`
 	TotalRides     int          `json:"total_rides"`
 	CurrentOrderID *uint        `json:"current_order_id"`
 	RejectReason   string       `json:"reject_reason"`
@@ -203,6 +207,35 @@ type Transaction struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// Driver payment plans.
+const (
+	PlanCommission = "commission"
+	PlanMonthly    = "monthly"
+)
+
+// Payment statuses of a card top-up.
+const (
+	PaymentPending = "pending"
+	PaymentPaid    = "paid"
+	PaymentFailed  = "failed"
+)
+
+// Payment is a driver's card top-up of the balance through the bank gateway.
+type Payment struct {
+	ID              uint       `gorm:"primaryKey" json:"id"`
+	DriverID        uint       `gorm:"index" json:"driver_id"`
+	Driver          *Driver    `json:"driver,omitempty"`
+	Amount          float64    `json:"amount"`
+	Status          string     `gorm:"size:16;index" json:"status"`
+	Provider        string     `gorm:"size:20" json:"provider"`
+	ProviderOrderID string     `gorm:"size:64;index" json:"provider_order_id"`
+	FormURL         string     `gorm:"size:500" json:"form_url"`
+	Error           string     `gorm:"size:255" json:"error"`
+	PaidAt          *time.Time `json:"paid_at"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+}
+
 // SupportTicket is a complaint / question from a user.
 type SupportTicket struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
@@ -218,5 +251,5 @@ type SupportTicket struct {
 
 // All returns every model for auto-migration.
 func All() []any {
-	return []any{&User{}, &OTPCode{}, &Driver{}, &Tariff{}, &Order{}, &PromoCode{}, &SavedAddress{}, &Transaction{}, &SupportTicket{}}
+	return []any{&User{}, &OTPCode{}, &Driver{}, &Tariff{}, &Order{}, &PromoCode{}, &SavedAddress{}, &Transaction{}, &SupportTicket{}, &Payment{}}
 }

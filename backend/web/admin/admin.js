@@ -7,7 +7,7 @@
   const CITY = [37.9601, 58.3261];
   let token = localStorage.getItem('adminToken') || '';
   let ws, map, driverMarkers = {}, orderMarkers = {}, tariffs = [];
-  const state = { page: 'dashboard', orders: { page: 1 }, drivers: { page: 1 }, clients: { page: 1 } };
+  const state = { page: 'dashboard', orders: { page: 1 }, drivers: { page: 1 }, clients: { page: 1 }, payments: { page: 1 } };
 
   // ---------- helpers ----------
   const fmtMoney = v => (Math.round((v || 0) * 100) / 100).toLocaleString('ru-RU') + ' TMT';
@@ -46,8 +46,8 @@
   $('#logout').onclick = logout;
 
   // ---------- navigation ----------
-  const titles = { dashboard: 'Dashboard', map: 'Janly karta', orders: 'Sargytlar', drivers: 'Sürüjiler', clients: 'Müşderiler', tariffs: 'Tarifler', promos: 'Promokodlar', tickets: 'Ýüztutmalar', settings: 'Sazlamalar' };
-  const loaders = { dashboard: loadDashboard, map: loadMap, orders: loadOrders, drivers: loadDrivers, clients: loadClients, tariffs: loadTariffs, promos: loadPromos, tickets: loadTickets, settings: () => { $('#apiBaseShow').textContent = API; } };
+  const titles = { dashboard: 'Dashboard', map: 'Janly karta', orders: 'Sargytlar', drivers: 'Sürüjiler', clients: 'Müşderiler', tariffs: 'Tarifler', promos: 'Promokodlar', payments: 'Kart tölegleri', tickets: 'Ýüztutmalar', settings: 'Sazlamalar' };
+  const loaders = { dashboard: loadDashboard, map: loadMap, orders: loadOrders, drivers: loadDrivers, clients: loadClients, tariffs: loadTariffs, promos: loadPromos, payments: loadPayments, tickets: loadTickets, settings: () => { $('#apiBaseShow').textContent = API; } };
   function go(page) {
     if (!loaders[page]) page = 'dashboard';
     state.page = page;
@@ -182,7 +182,7 @@
       <td>#${d.id}</td><td>${esc(d.user?.name || '—')}${d.is_online ? ' <span class="dot on"></span>' : ''}</td><td>${esc(d.user?.phone)}</td>
       <td>${esc(d.car_brand)} ${esc(d.car_model)}<br><span class="muted">${esc(d.car_color)} · ${esc(d.car_plate)} · ${d.car_year || ''}</span><br><span class="muted">Şah.: ${esc(d.license_number)}</span></td>
       <td>${esc(d.tariff_codes)}</td><td>★ ${(d.user?.rating || 5).toFixed(1)} <span class="muted">(${d.user?.rating_count || 0})</span></td><td>${d.total_rides}</td>
-      <td style="color:${d.balance < 0 ? 'var(--bad)' : 'var(--ok)'}">${fmtMoney(d.balance)}</td><td>${Math.round((d.commission_rate || 0) * 100)}%</td>
+      <td style="color:${d.balance < 0 ? 'var(--bad)' : 'var(--ok)'}">${fmtMoney(d.balance)}</td><td>${planText(d)}</td>
       <td>${stat(d.status)}${d.reject_reason ? `<br><span class="muted">${esc(d.reject_reason)}</span>` : ''}</td>
       <td class="btns">
         ${d.status !== 'approved' ? `<button class="btn small ok" data-st="approved" data-id="${d.id}">Tassykla</button>` : ''}
@@ -201,12 +201,14 @@
     $$('[data-edit]').forEach(b => b.onclick = () => {
       const d = items.find(x => x.id == b.dataset.edit);
       modal(`<h3>Sürüji #${d.id} — ${esc(d.user?.name)}</h3>
+        <label>Töleg görnüşi<select id="edPlan"><option value="commission" ${d.payment_plan !== 'monthly' ? 'selected' : ''}>Göterim (her syýahatdan)</option><option value="monthly" ${d.payment_plan === 'monthly' ? 'selected' : ''}>Aýlyk töleg</option></select></label>
         <label>Komissiýa (0.10 = 10%)<input id="edCom" type="number" step="0.01" min="0" max="1" value="${d.commission_rate}"></label>
+        <label>Aýlyk töleg, TMT (0 = esasy baha)<input id="edFee" type="number" step="1" min="0" value="${d.monthly_fee || 0}"></label>
         <label>Tarifler (vergul bilen)<input id="edTar" value="${esc(d.tariff_codes)}" placeholder="economy,comfort"></label>
         <p class="muted">Elýeterli: ${tariffs.map(t => t.code).join(', ')}</p>
         <div class="btns"><button class="btn primary" id="edOk">Ýatda sakla</button><button class="btn" id="edNo">Ýap</button></div>`);
       $('#edNo').onclick = closeModal;
-      $('#edOk').onclick = async () => { await api(`/admin/drivers/${d.id}/status`, { method: 'PUT', body: { commission_rate: +$('#edCom').value, tariff_codes: $('#edTar').value } }); closeModal(); toast('Ýatda saklandy', 'ok'); loadDrivers(); };
+      $('#edOk').onclick = async () => { await api(`/admin/drivers/${d.id}/status`, { method: 'PUT', body: { commission_rate: +$('#edCom').value, tariff_codes: $('#edTar').value, payment_plan: $('#edPlan').value, monthly_fee: +$('#edFee').value } }); closeModal(); toast('Ýatda saklandy', 'ok'); loadDrivers(); };
     });
     bindPasswordButtons();
     $$('[data-bal]').forEach(b => b.onclick = () => {
@@ -315,6 +317,30 @@
     $$('[data-pdel]').forEach(b => b.onclick = async () => { if (confirm('Pozmaly?')) { await api(`/admin/promos/${b.dataset.pdel}`, { method: 'DELETE' }); loadPromos(); } });
   }
   $('#promoAdd').onclick = () => openPromo();
+
+  // ---------- payment plans & card payments ----------
+  function planText(d) {
+    if (d.payment_plan !== 'monthly') return `Göterim ${Math.round((d.commission_rate || 0) * 100)}%`;
+    const until = d.subscription_until ? new Date(d.subscription_until) : null;
+    const active = until && until > new Date();
+    return `Aýlyk${d.monthly_fee ? ' ' + fmtMoney(d.monthly_fee) : ''}<br><span class="muted" style="color:${active ? 'var(--ok)' : 'var(--bad)'}">${active ? fmtDate(d.subscription_until) + ' çenli' : 'tölenmedik'}</span>`;
+  }
+  const PAY = { paid: ['Tölendi', 'completed'], pending: ['Garaşylýar', 'searching'], failed: ['Geçmedi', 'cancelled'] };
+  async function loadPayments(pg) {
+    if (pg) state.payments.page = pg;
+    const limit = 25;
+    const r = await api(`/admin/payments?status=${$('#paymentStatus').value}&page=${state.payments.page}&limit=${limit}`);
+    $('#paymentSummary').textContent = `Şu gün tölenen: ${fmtMoney(r.paid_today)} · Bank: ${r.provider || 'sazlanmadyk'}${r.provider === 'demo' ? ' (DEMO — hakyky pul däl)' : ''}`;
+    $('#paymentsTable tbody').innerHTML = r.items.map(p => `<tr>
+      <td>#${p.id}</td><td>${fmtDate(p.created_at)}</td>
+      <td>${esc(p.driver?.user?.name || '—')}<br><span class="muted">${esc(p.driver?.user?.phone || '')} · ${esc(p.driver?.car_plate || '')}</span></td>
+      <td><b>${fmtMoney(p.amount)}</b></td>
+      <td><span class="status s-${(PAY[p.status] || [])[1] || ''}">${(PAY[p.status] || [p.status])[0]}</span>${p.paid_at ? `<br><span class="muted">${fmtDate(p.paid_at)}</span>` : ''}</td>
+      <td>${esc(p.provider)}<br><span class="muted">${esc(p.provider_order_id || '')}</span></td>
+      <td class="muted">${esc(p.error || '')}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">Töleg ýok</td></tr>';
+    pager($('#paymentsPager'), r.total, state.payments.page, limit, loadPayments);
+  }
+  $('#paymentRefresh').onclick = () => loadPayments(1); $('#paymentStatus').onchange = () => loadPayments(1);
 
   // ---------- tickets ----------
   async function loadTickets() {

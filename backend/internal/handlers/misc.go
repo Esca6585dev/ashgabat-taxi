@@ -27,6 +27,7 @@ func (h *Handler) PublicConfig(c *fiber.Ctx) error {
 		"otp_ttl_min":     h.Cfg.OTPTTLMin,
 		"min_app_version": 1,
 		"payment_methods": []string{"cash", "card"},
+		"card_topup":      h.Gateway != nil,
 	})
 }
 

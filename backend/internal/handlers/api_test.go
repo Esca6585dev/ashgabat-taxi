@@ -28,6 +28,8 @@ import (
 type env struct {
 	base string
 	t    *testing.T
+	h    *handlers.Handler
+	hub  *ws.Hub
 }
 
 func (e env) call(method, path, token string, body any) map[string]any {
@@ -72,6 +74,9 @@ func startServer(t *testing.T, setup ...func(*gorm.DB, *ws.Hub)) env {
 	}
 	disp := services.NewDispatcher(db, hub, cfg)
 	h := handlers.New(db, cfg, hub, disp, services.NewOTPService(db, cfg, services.LogSender{}), services.NewRouter(cfg), services.NewGeocoder(cfg))
+	h.Billing = services.NewBilling(db, cfg, hub)
+	disp.Billing = h.Billing
+	h.Gateway = services.DemoGateway{}
 	app := fiber.New(fiber.Config{DisableStartupMessage: true})
 	routes.Register(app, h)
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
@@ -80,7 +85,7 @@ func startServer(t *testing.T, setup ...func(*gorm.DB, *ws.Hub)) env {
 	}
 	go func() { _ = app.Listener(ln) }()
 	t.Cleanup(func() { _ = app.Shutdown() })
-	return env{base: "http://" + ln.Addr().String(), t: t}
+	return env{base: "http://" + ln.Addr().String(), t: t, h: h, hub: hub}
 }
 
 func (e env) login(phone, role string) string {

@@ -70,6 +70,15 @@ func Register(app *fiber.App, h *handlers.Handler) {
 	d.Post("/orders/:id/cancel", driverOnly, h.DriverCancelOrder)
 	d.Post("/orders/:id/rate", driverOnly, h.RateClient)
 	d.Get("/earnings", driverOnly, h.DriverEarnings)
+	d.Post("/topup", driverOnly, h.DriverTopUp)
+	d.Get("/topup/:id", driverOnly, h.DriverTopUpStatus)
+	d.Get("/payments", driverOnly, h.DriverPayments)
+	d.Post("/subscription", driverOnly, h.DriverRenew)
+
+	// bank redirects (public: the browser carries no token); the balance is credited only after asking the bank
+	api.Get("/payments/return", h.PaymentReturn)
+	api.Get("/payments/demo/:id", h.DemoPayPage)
+	api.Post("/payments/demo/:id", h.DemoPaySubmit)
 
 	// admin
 	ad := api.Group("/admin", auth, adminOnly)
@@ -96,6 +105,7 @@ func Register(app *fiber.App, h *handlers.Handler) {
 	ad.Put("/promos/:id", h.AdminPromoSave)
 	ad.Delete("/promos/:id", h.AdminPromoDelete)
 	ad.Get("/tickets", h.AdminTickets)
+	ad.Get("/payments", h.AdminPayments)
 	ad.Put("/tickets/:id", h.AdminTicketReply)
 
 	// realtime

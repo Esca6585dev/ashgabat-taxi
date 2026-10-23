@@ -25,6 +25,10 @@ type Handler struct {
 	Router   *services.Router
 	Geo      *services.Geocoder
 	Pricing  services.Pricing
+
+	// optional: payment plans and card top-up (nil = not enforced / not offered)
+	Billing *services.Billing
+	Gateway services.PaymentGateway
 }
 
 // New builds the handler set.
