@@ -57,6 +57,38 @@ Sürüji programmasyna iki ýol bilen girip bolýar: **SMS kod** ýa-da **telefo
 - Sürüji özi hem programmada **Profil → Parol bellemek** arkaly parol goýup bilýär.
 - 5 gezek ýalňyş parol girizilse, ol belgi 15 minut gulplanýar (SMS kod bilen girip bolýar).
 
+## Push bildirişler (Firebase)
+
+Programma ýapyk wagty hem telefon habar berýär:
+
+| Kime | Haçan |
+|---|---|
+| Sürüji | täze sargyt (sesli, ekranda çykýar), müşderi sargydy ýatyrdy, profil tassyklandy/ret edildi |
+| Müşderi | sürüji tapyldy, sürüji geldi, syýahat tamamlandy, boş sürüji tapylmady, sürüji ýatyrdy, goldaw jogap berdi |
+
+Firebase sazlamasy bolmasa hem ähli zat işleýär — diňe push gelmeýär.
+
+1. https://console.firebase.google.com → täze taslama.
+2. Iki **Android** programma goşuň: `tm.ashgabattaxi.client_app` we `tm.ashgabattaxi.driver_app`
+   (`google-services.json` gerek däl).
+3. **Serwer:** Project settings → Service accounts → *Generate new private key*. Faýly serwerde
+   `secrets/firebase-key.json` edip goýuň we `.env` faýlyna `FCM_CREDENTIALS_FILE=/app/secrets/firebase-key.json` ýazyň
+   (Docker-siz: faýlyň ýoly). Serwer işe başlanda `push: FCM enabled for project …` ýazgysy çykýar.
+4. **Programmalar:** GitHub → Settings → Secrets and variables → Actions → **Variables**:
+
+   | Üýtgeýän | Nireden |
+   |---|---|
+   | `FIREBASE_API_KEY` | Project settings → General → Web API Key |
+   | `FIREBASE_PROJECT_ID` | Project ID |
+   | `FIREBASE_SENDER_ID` | Cloud Messaging → Sender ID |
+   | `FIREBASE_CLIENT_APP_ID` | müşderi programmasynyň App ID (`1:…:android:…`) |
+   | `FIREBASE_DRIVER_APP_ID` | sürüji programmasynyň App ID |
+
+   Soňra **Actions → Build apps → Run workflow**: täze APK-lar push bilen gurulýar.
+5. Telefonda programma ilkinji açylanda «bildiriş ibermäge rugsat» soraýar — rugsat beriň.
+
+iPhone üçin goşmaça Apple Push (APNs) açary Firebase-e ýüklenmeli; web görnüşinde push ýok (WebSocket ýeterlik).
+
 ## 2. Hakyky ýol aralyklary (OSRM, islege görä)
 
 `OSRM_URL` boş bolsa aralyk göni çyzyk × 1.3 hasaplanýar. Takyk baha üçin:

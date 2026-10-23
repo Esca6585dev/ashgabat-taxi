@@ -3,6 +3,8 @@
 # Server address baked into the APKs (users can still change it in the app, gear icon on the login screen):
 #   - "Run workflow" input api_url, or
 #   - repository variable API_URL (Settings → Secrets and variables → Actions → Variables).
+# Push notifications (optional, repository variables): FIREBASE_API_KEY, FIREBASE_PROJECT_ID, FIREBASE_SENDER_ID,
+#   FIREBASE_CLIENT_APP_ID (tm.ashgabattaxi.client_app), FIREBASE_DRIVER_APP_ID (tm.ashgabattaxi.driver_app).
 # Optional release key (otherwise the APK is signed with a debug key, fine for direct install):
 #   secrets ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
 name: Build apps
@@ -30,6 +32,11 @@ jobs:
     timeout-minutes: 45
     env:
       API_URL: ${{ inputs.api_url || vars.API_URL }}
+      FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      FIREBASE_SENDER_ID: ${{ vars.FIREBASE_SENDER_ID }}
+      FIREBASE_CLIENT_APP_ID: ${{ vars.FIREBASE_CLIENT_APP_ID }}
+      FIREBASE_DRIVER_APP_ID: ${{ vars.FIREBASE_DRIVER_APP_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -75,10 +82,18 @@ jobs:
           define=""
           if [ -n "$API_URL" ]; then define="--dart-define=API_URL=$API_URL"; fi
           for app in client_app driver_app; do
+            appid=$([ "$app" = client_app ] && echo "$FIREBASE_CLIENT_APP_ID" || echo "$FIREBASE_DRIVER_APP_ID")
+            push=""
+            if [ -n "$FIREBASE_API_KEY" ] && [ -n "$appid" ]; then
+              push="--dart-define=FIREBASE_API_KEY=$FIREBASE_API_KEY --dart-define=FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID --dart-define=FIREBASE_SENDER_ID=$FIREBASE_SENDER_ID --dart-define=FIREBASE_APP_ID=$appid"
+              echo "$app: push notifications enabled"
+            else
+              echo "$app: push notifications off (no Firebase variables)"
+            fi
             ( cd apps/$app
               flutter pub get
               flutter analyze
-              flutter build apk --release $define
+              flutter build apk --release $define $push
               base=$([ "$app" = client_app ] && echo /app/ || echo /driver/)
               # web is served by the backend itself, so it talks to its own origin
               flutter build web --release --no-web-resources-cdn --base-href "$base" )
@@ -106,5 +121,6 @@ jobs:
             Web: `web-musderi.zip` we `web-suruji.zip` serwerdäki `web-apps/` bukjasyna açyň → `http://SERWER:8080/app/` we `/driver/` (docs/ADIMLER.md).
 
             Serweriň salgysy: `${{ env.API_URL || 'bellenmedi — programmada ⚙ arkaly giriziň' }}`
+            Push bildirişler: ${{ env.FIREBASE_API_KEY != '' && 'açyk' || 'öçük (Firebase üýtgeýänleri bellenmedi)' }}
             Commit: ${{ github.sha }}
           files: dist/*

@@ -37,6 +37,10 @@ type Config struct {
 	SMPPDstTON     int
 	SMPPDstNPI     int
 
+	// Firebase Cloud Messaging service-account key (file path or the JSON itself); empty => push disabled
+	FCMCredentialsFile string
+	FCMCredentialsJSON string
+
 	OTPFixedCode string // non-empty => every OTP equals this (dev/test only)
 	OTPTTLMin    int
 
@@ -126,6 +130,9 @@ func Load() *Config {
 		SMPPSrcNPI:     envInt("SMPP_SRC_NPI", 0),
 		SMPPDstTON:     envInt("SMPP_DST_TON", dstTON),
 		SMPPDstNPI:     envInt("SMPP_DST_NPI", dstNPI),
+
+		FCMCredentialsFile: env("FCM_CREDENTIALS_FILE", ""),
+		FCMCredentialsJSON: env("FCM_CREDENTIALS_JSON", ""),
 
 		OTPFixedCode: env("OTP_FIXED_CODE", ""),
 		OTPTTLMin:    envInt("OTP_TTL_MIN", 5),

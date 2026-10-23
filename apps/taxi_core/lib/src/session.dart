@@ -17,6 +17,10 @@ class Session extends ChangeNotifier {
   /// Set when a saved session could not be restored because the server is unreachable.
   String? startupError;
 
+  /// Firebase device token (see PushService); sent to the server while logged in.
+  String? pushToken;
+  bool _loggingOut = false;
+
   Session({required this.role, ApiClient? api}) : api = api ?? ApiClient() {
     realtime = Realtime(() => this.api.wsUri);
     this.api.onUnauthorized = logout;
@@ -63,6 +67,7 @@ class Session extends ChangeNotifier {
       try {
         user = await api.me();
         realtime.connect();
+        _sendPushToken();
       } on ApiException catch (e) {
         if (e.isUnauthorized || e.status == 403) {
           api.token = null;
@@ -95,6 +100,7 @@ class Session extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, r.token);
     realtime.connect();
+    _sendPushToken();
     notifyListeners();
     return r.isNew;
   }
@@ -109,7 +115,29 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Called by PushService on start and whenever Firebase rotates the token.
+  void setPushToken(String token) {
+    if (token == pushToken) return;
+    pushToken = token;
+    _sendPushToken();
+  }
+
+  void _sendPushToken() {
+    final t = pushToken;
+    if (t == null || user == null) return;
+    api.updateProfile(fcmToken: t).then((_) {}, onError: (_) {});
+  }
+
   Future<void> logout() async {
+    if (_loggingOut) return;
+    _loggingOut = true;
+    // stop notifications for this account on this phone (best effort, token still valid here)
+    if (pushToken != null && user != null && api.token != null) {
+      try {
+        await api.updateProfile(fcmToken: '').timeout(const Duration(seconds: 5));
+      } catch (_) {}
+    }
+    _loggingOut = false;
     realtime.disconnect();
     api.token = null;
     user = null;

@@ -43,6 +43,7 @@ services:
       OSRM_URL: ${OSRM_URL:-}
       COMMISSION_RATE: ${COMMISSION_RATE:-0.10}
       SUPPORT_PHONE: ${SUPPORT_PHONE:-+99312000000}
+      FCM_CREDENTIALS_FILE: ${FCM_CREDENTIALS_FILE:-}
       CLIENT_WEB_DIR: /app/web-apps/client_web
       DRIVER_WEB_DIR: /app/web-apps/driver_web
     ports:
@@ -50,6 +51,8 @@ services:
     # web versions of the apps (unzip the release web-*.zip files into ./web-apps)
     volumes:
       - ./web-apps:/app/web-apps:ro
+      # Firebase key for push: put firebase-key.json next to this file and set FCM_CREDENTIALS_FILE=/app/secrets/firebase-key.json in .env
+      - ./secrets:/app/secrets:ro
     restart: unless-stopped
 
   # Optional: self-hosted routing for real road distances (needs an OSM extract of Turkmenistan).

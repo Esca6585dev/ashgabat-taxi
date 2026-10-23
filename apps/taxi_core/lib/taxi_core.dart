@@ -5,6 +5,7 @@ export 'src/api.dart';
 export 'src/format.dart';
 export 'src/location.dart';
 export 'src/models.dart';
+export 'src/push.dart';
 export 'src/realtime.dart';
 export 'src/session.dart';
 export 'src/ui/map.dart';

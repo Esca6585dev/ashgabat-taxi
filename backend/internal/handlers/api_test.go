@@ -2,16 +2,20 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	fws "github.com/fasthttp/websocket"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 
 	"github.com/ashgabat-taxi/backend/internal/config"
 	"github.com/ashgabat-taxi/backend/internal/database"
@@ -51,7 +55,7 @@ func data(m map[string]any) map[string]any {
 	return d
 }
 
-func startServer(t *testing.T) env {
+func startServer(t *testing.T, setup ...func(*gorm.DB, *ws.Hub)) env {
 	t.Helper()
 	os.Setenv("DB_DSN", "file::memory:?cache=shared")
 	os.Setenv("OTP_FIXED_CODE", "1234")
@@ -63,6 +67,9 @@ func startServer(t *testing.T) env {
 	database.Migrate(db)
 	database.Seed(db, cfg)
 	hub := ws.NewHub()
+	for _, f := range setup {
+		f(db, hub)
+	}
 	disp := services.NewDispatcher(db, hub, cfg)
 	h := handlers.New(db, cfg, hub, disp, services.NewOTPService(db, cfg, services.LogSender{}), services.NewRouter(cfg), services.NewGeocoder(cfg))
 	app := fiber.New(fiber.Config{DisableStartupMessage: true})
@@ -276,5 +283,94 @@ func TestDriverPasswordLogin(t *testing.T) {
 	}
 	if login("+99362334455", "admin-berdi")["success"] != true {
 		t.Fatal("login after admin reset failed")
+	}
+}
+
+// fakePush records notifications instead of calling Firebase.
+type fakePush struct {
+	mu   sync.Mutex
+	sent []string // "token|title"
+}
+
+func (f *fakePush) Send(_ context.Context, token string, m services.PushMessage) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if token == "dead-token" {
+		return services.ErrPushTokenInvalid
+	}
+	f.sent = append(f.sent, token+"|"+m.Title)
+	return nil
+}
+
+func (f *fakePush) waitFor(t *testing.T, want string) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		f.mu.Lock()
+		for _, s := range f.sent {
+			if strings.Contains(s, want) {
+				f.mu.Unlock()
+				return
+			}
+		}
+		f.mu.Unlock()
+		time.Sleep(20 * time.Millisecond)
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	t.Fatalf("push %q not sent; got %v", want, f.sent)
+}
+
+func TestPushNotifications(t *testing.T) {
+	fp := &fakePush{}
+	var gdb *gorm.DB
+	e := startServer(t, func(db *gorm.DB, hub *ws.Hub) {
+		gdb = db
+		hub.OnSend = services.NewPusherWith(db, fp, "TMT").Event
+	})
+	client := e.login("+99365000555", "client")
+	driver := e.login("+99362000555", "driver")
+	admin, _ := data(e.call("POST", "/api/v1/auth/admin/login", "", map[string]any{"phone": "+99360000000", "password": "admin12345"}))["token"].(string)
+	e.call("PUT", "/api/v1/auth/profile", client, map[string]any{"fcm_token": "client-phone"})
+	e.call("PUT", "/api/v1/auth/profile", driver, map[string]any{"fcm_token": "driver-phone"})
+
+	id := data(e.call("POST", "/api/v1/driver/register", driver, map[string]any{"car_brand": "Toyota", "car_plate": "AG 5555", "license_number": "L5", "tariff_codes": "economy"}))["id"]
+	e.call("PUT", fmt.Sprintf("/api/v1/admin/drivers/%v/status", id), admin, map[string]any{"status": "approved"})
+	fp.waitFor(t, "driver-phone|Profiliňiz tassyklandy")
+
+	e.call("POST", "/api/v1/driver/online", driver, map[string]any{"online": true, "lat": 37.95, "lng": 58.33})
+	o := data(e.call("POST", "/api/v1/orders/", client, map[string]any{"tariff_id": 1, "pickup": map[string]any{"lat": 37.96, "lng": 58.326}, "dropoff": map[string]any{"lat": 37.93, "lng": 58.39}}))
+	fp.waitFor(t, "driver-phone|Täze sargyt") // offer reaches the driver's phone even without WebSocket
+
+	e.call("POST", fmt.Sprintf("/api/v1/driver/orders/%v/accept", o["id"]), driver, nil)
+	fp.waitFor(t, "client-phone|Sürüji tapyldy")
+	e.call("POST", fmt.Sprintf("/api/v1/driver/orders/%v/arrived", o["id"]), driver, nil)
+	fp.waitFor(t, "client-phone|Sürüji garaşýar")
+
+	// same phone logs into another account: the token moves, the old account stops getting pushes
+	other := e.login("+99365000556", "client")
+	e.call("PUT", "/api/v1/auth/profile", other, map[string]any{"fcm_token": "client-phone"})
+	var n int64
+	gdb.Table("users").Where("fcm_token = ?", "client-phone").Count(&n)
+	if n != 1 {
+		t.Fatalf("token kept by %d accounts", n)
+	}
+
+	// a token Firebase rejects is forgotten
+	e.call("PUT", "/api/v1/auth/profile", driver, map[string]any{"fcm_token": "dead-token"})
+	e.call("POST", "/api/v1/driver/orders/"+fmt.Sprint(o["id"])+"/start", driver, nil)
+	e.call("POST", "/api/v1/driver/orders/"+fmt.Sprint(o["id"])+"/complete", driver, nil)
+	e.call("PUT", fmt.Sprintf("/api/v1/admin/drivers/%v/status", id), admin, map[string]any{"status": "approved"})
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		var tok string
+		gdb.Table("users").Select("fcm_token").Where("phone = ?", "+99362000555").Scan(&tok)
+		if tok == "" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("dead token not cleared: %q", tok)
+		}
+		time.Sleep(20 * time.Millisecond)
 	}
 }

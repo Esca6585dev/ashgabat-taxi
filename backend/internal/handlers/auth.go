@@ -140,7 +140,12 @@ func (h *Handler) UpdateProfile(c *fiber.Ctx) error {
 		upd["lang"] = *req.Lang
 	}
 	if req.FCMToken != nil {
-		upd["fcm_token"] = *req.FCMToken
+		tok := strings.TrimSpace(*req.FCMToken)
+		upd["fcm_token"] = tok
+		if tok != "" {
+			// one phone, one account: drop the token from whoever used this device before
+			h.DB.Model(&models.User{}).Where("fcm_token = ? AND id <> ?", tok, u.ID).Update("fcm_token", "")
+		}
 	}
 	if len(upd) > 0 {
 		h.DB.Model(u).Updates(upd)

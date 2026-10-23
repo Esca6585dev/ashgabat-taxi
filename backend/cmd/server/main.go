@@ -32,6 +32,9 @@ func main() {
 	database.Seed(db, cfg)
 
 	hub := ws.NewHub()
+	if pusher := services.NewPusher(db, cfg); pusher != nil {
+		hub.OnSend = pusher.Event
+	}
 	dispatcher := services.NewDispatcher(db, hub, cfg)
 	otp := services.NewOTPService(db, cfg, services.NewSMSSender(cfg))
 	router := services.NewRouter(cfg)

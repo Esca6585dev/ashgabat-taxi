@@ -2,6 +2,9 @@
 backend/*.db
 backend/*.db-*
 backend/.env
+secrets/
+*firebase*key*.json
+*-adminsdk-*.json
 .env
 backend/server
 backend/server.exe

@@ -1,23 +1,25 @@
 module github.com/ashgabat-taxi/backend
 
-go 1.23
+go 1.23.0
 
 require (
 	github.com/fasthttp/websocket v1.5.8
+	github.com/fiorix/go-smpp v0.0.0-20210403173735-2894b96e70ba
 	github.com/glebarez/sqlite v1.11.0
 	github.com/gofiber/contrib/websocket v1.3.2
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.27.0
+	golang.org/x/oauth2 v0.30.0
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/gorm v1.25.12
 )
 
 require (
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/fiorix/go-smpp v0.0.0-20210403173735-2894b96e70ba // indirect
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect

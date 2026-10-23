@@ -7,6 +7,7 @@ import 'screens/driver_root.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final session = Session(role: 'driver')..init();
+  PushService.start(session);
   runApp(DriverApp(session: session));
 }
 

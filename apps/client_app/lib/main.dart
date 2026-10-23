@@ -7,6 +7,7 @@ import 'screens/home_screen.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final session = Session(role: 'client')..init();
+  PushService.start(session);
   runApp(ClientApp(session: session));
 }
 

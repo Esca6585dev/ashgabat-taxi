@@ -31,6 +31,9 @@ type Conn struct {
 type Hub struct {
 	mu    sync.RWMutex
 	conns map[uint]map[*Conn]struct{}
+
+	// OnSend, when set, sees every per-user event (push notifications); it must not block.
+	OnSend func(userID uint, typ string, data any)
 }
 
 // NewHub creates an empty hub.
@@ -100,6 +103,9 @@ func (h *Hub) IsOnline(userID uint) bool {
 
 // SendTo pushes an event to every socket of a user. Returns true if delivered to at least one.
 func (h *Hub) SendTo(userID uint, typ string, data any) bool {
+	if h.OnSend != nil {
+		h.OnSend(userID, typ, data)
+	}
 	payload, err := json.Marshal(Event{Type: typ, Data: data, At: time.Now().Unix()})
 	if err != nil {
 		log.Printf("ws: marshal %s: %v", typ, err)
